@@ -13,8 +13,11 @@ usage: nbhelper.py [-h] [--cdir path] [--sdir path] [--odir path]
                    [--zipfiles NbName.html [NbName.html ...]]
                    [--backup nbgrader_step] [--nbhelp]
 
-A collection of helpful functions for use with nbgrader, see
-https://nbgrader.readthedocs.io/en/stable/user_guide/philosophy.html
+A collection of helpful functions for use with nbgrader, designed to be placed
+in <course_dir>/nbhelper.py (see
+https://nbgrader.readthedocs.io/en/stable/user_guide/philosophy.html) but can
+also be used offline or on alternative directories if you haven't been given
+proper access or want to easily test it in a safe environment
 
 optional arguments:
   -h, --help            show this help message and exit

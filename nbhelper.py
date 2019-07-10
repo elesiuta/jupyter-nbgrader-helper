@@ -481,7 +481,9 @@ def zipFeedback(student_dir, data):
 ####### Main #######
 
 if __name__ == "__main__":
-    readme = ("A collection of helpful functions for use with nbgrader, see https://nbgrader.readthedocs.io/en/stable/user_guide/philosophy.html")
+    readme = ("A collection of helpful functions for use with nbgrader, "
+              "designed to be placed in <course_dir>/nbhelper.py (see https://nbgrader.readthedocs.io/en/stable/user_guide/philosophy.html) "
+              "but can also be used offline or on alternative directories if you haven't been given proper access or want to easily test it in a safe environment")
     parser = argparse.ArgumentParser(description=readme)
     parser.add_argument("--cdir", type=str, metavar="path", default=os.getcwd(),
                         help="Path to course directory (default: current directory) structured as <course_dir>/<nbgrader_step>/[<student_id>/]<AssignName>/<NbName>.<ipynb|html> where nbgrader_step = source|release|submitted|autograded|feedback")
@@ -778,6 +780,7 @@ if __name__ == "__main__":
 ####### Templates #######
 
 '''
+##### Recursion #####
 
 ### BEGIN SOLUTION
 def fib(n):
@@ -788,14 +791,6 @@ def fib(n):
         return 1
     # common case
     return fib(n-1) + fib(n-2)
-### END SOLUTION
-
-### BEGIN SOLUTION
-def fibLoop(n):
-    terms = [1,1]
-    for i in range(n-1):
-        terms.append(terms[-1] + terms[-2])
-    return terms[-1]
 ### END SOLUTION
 
 ### BEGIN HIDDEN TESTS
@@ -810,6 +805,16 @@ assert fib(10) == 89
 assert recursion_counter[0] > 10
 ### END HIDDEN TESTS
 
+##### Limit Execution Time #####
+
+### BEGIN SOLUTION
+def fibLoop(n):
+    terms = [1,1]
+    for i in range(n-1):
+        terms.append(terms[-1] + terms[-2])
+    return terms[-1]
+### END SOLUTION
+
 ### BEGIN HIDDEN TESTS
 def asyncAssertAnswer():
     # put original test case(s) here
@@ -820,6 +825,25 @@ if __name__ == '__main__':
         res = pool.apply_async(asyncAssertAnswer)
         res.get(timeout=10)
 ### END HIDDEN TESTS
+
+##### Semi-Hidden Test Cases #####
+
+### BEGIN SOLUTION
+def gcd(a, b):
+    a, b = abs(a), abs(b)
+    while b != 0:
+        a, b = b, a % b
+    return a
+### END SOLUTION
+
+### Test Cases
+from hashlib import sha256
+hash_fun = lambda x : sha256(str(x).encode()).hexdigest()
+# visible input, hidden output
+assert hash_fun(gcd(30, 42)) == 'e7f6c011776e8db7cd330b54174fd76f7d0216b612387a5ffcfb81e6f0919683'
+# semi-hidden input, hidden output, chance of false positives
+inputs = [(x,y) for x in range(50) for y in range (50)]
+assert any([hash_fun(gcd(*x)) == 'e7f6c011776e8db7cd330b54174fd76f7d0216b612387a5ffcfb81e6f0919683' for x in inputs])
 
 '''
 
