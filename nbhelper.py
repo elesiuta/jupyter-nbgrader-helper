@@ -361,7 +361,7 @@ def updateTestCells(template, student, student_id = ""):
                     print("Student: %s is missing answer cell: %s" %(student_id, grade_id))
         except:
             pass
-    # check for duplicate cell IDs, keep longer one
+    # check for duplicate grade_ids, keep first one and concatenate contents of subsequent ones then remove them
     student_cells = {}
     remove_cells = []
     for i in range(len(student["cells"])):
