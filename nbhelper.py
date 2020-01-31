@@ -647,9 +647,12 @@ if __name__ == "__main__":
         userid = input("Enter your moss userid: ")
         moss_script = moss_script.replace("$userid=987654321;", "$userid=%s;" %(userid))
         os.makedirs(os.path.join(COURSE_DIR, "moss"), exist_ok=True)
-        with open(os.path.join(COURSE_DIR, "moss", "moss.pl"), "w") as f:
-            f.write(moss_script)
-        os.chmod(os.path.join(COURSE_DIR, "moss"), 0o0700)
+        if os.name == "nt":
+            with open(os.path.join(COURSE_DIR, "moss", "moss.pl"), "w") as f:
+                f.write(moss_script)
+        else:
+            with os.fdopen(os.open(os.path.join(COURSE_DIR, "moss", "moss.pl"), os.O_CREAT | os.O_RDWR, 0o700), "w") as f:
+                f.write(moss_script)
 
     if args.add is not None:
         assign_name, nb_name = args.add
