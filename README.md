@@ -7,9 +7,8 @@ usage: nbhelper.py [-h] [--cdir path] [--sdir path] [--odir path]
                    [--meta AssignName NbName.ipynb]
                    [--select StudentID [StudentID ...]]
                    [--info AssignName]
-                   [--moss AssignName]
-                   [--dist AssignName]
-                   [--fdist AssignName]
+                   [--moss AssignName] [--getmoss userid]
+                   [--dist AssignName] [--fdist AssignName]
                    [--email AssignName|zip NbName.html|feedback.zip]
                    [--ckdir AssignName NbName.extension]
                    [--ckdup [NbName.extension]]
@@ -50,6 +49,8 @@ optional arguments:
                         <course_dir>/reports/<AssignName>/info-<NbName>.csv
   --moss AssignName     Exports student answer cells as files and optionally
                         check with moss using <course_dir>/moss/moss.pl
+  --getmoss userid      Downloads moss script with your userid to
+                        <course_dir>/moss/moss.pl then removes it after use
   --dist AssignName     Gets distribution of scores across test cells from
                         autograded notebooks and writes each student's results
                         to <course_dir>/reports/<AssignName>/dist-<NbName>.csv
