@@ -3,8 +3,12 @@
 ```
 usage: nbhelper.py [-h] [--cdir path] [--sdir path] [--odir path]
                    [--add AssignName NbName.ipynb]
-                   [--fix AssignName NbName.ipynb] [--info AssignName]
-                   [--moss AssignName] [--dist AssignName]
+                   [--fix AssignName NbName.ipynb]
+                   [--meta AssignName NbName.ipynb]
+                   [--select StudentID [StudentID ...]]
+                   [--info AssignName]
+                   [--moss AssignName]
+                   [--dist AssignName]
                    [--fdist AssignName]
                    [--email AssignName|zip NbName.html|feedback.zip]
                    [--ckdir AssignName NbName.extension]
@@ -13,19 +17,15 @@ usage: nbhelper.py [-h] [--cdir path] [--sdir path] [--odir path]
                    [--zipfiles NbName.html [NbName.html ...]]
                    [--backup nbgrader_step] [--nbhelp]
 
-A collection of helpful functions for use with nbgrader, designed to be placed
-in <course_dir>/nbhelper.py (see
-https://nbgrader.readthedocs.io/en/stable/user_guide/philosophy.html) but can
-also be used offline or on alternative directories if you haven't been given
-proper access or want to easily test it in a safe environment
+A collection of helpful functions for use with jupyter nbgrader. Designed to
+be placed in <course_dir>/nbhelper.py by default with the structure:
+<course_dir>/<nbgrader_step>/[<student_id>/]<AssignName>/<NbName>.<ipynb|html>
+where nbgrader_step = source|release|submitted|autograded|feedback
 
 optional arguments:
   -h, --help            show this help message and exit
-  --cdir path           Path to course directory (default: current directory)
-                        structured as <course_dir>/<nbgrader_step>/[<student_i
-                        d>/]<AssignName>/<NbName>.<ipynb|html> where
-                        nbgrader_step =
-                        source|release|submitted|autograded|feedback
+  --cdir path           Override path to course_dir (default: current
+                        directory)
   --sdir path           Override path to source directory
   --odir path           Override path to the submitted, autograded, or
                         feedback directory
@@ -38,6 +38,12 @@ optional arguments:
                         Update test points by using the corresponding file in
                         source as a template and matching the cell's grade_id,
                         also combines duplicate grade_ids
+  --meta AssignName NbName.ipynb
+                        Fix cell metadata by replacing with that of source,
+                        matches based on grade_id
+  --select StudentID [StudentID ...]
+                        Select specific students to fix their notebooks
+                        without having to run on the entire class
   --info AssignName     Get some quick info (student id, file size, cell
                         count, total execution count, [grade id : execution
                         count]) of all submissions and writes to
@@ -52,8 +58,8 @@ optional arguments:
                         student's results to
                         <course_dir>/reports/<AssignName>/fdist-<NbName>.csv
   --email AssignName|zip NbName.html|feedback.zip
-                        Email feedback to students (see config in script,
-                        prompts for unset fields)
+                        Email feedback to students (see EMAIL_CONFIG in
+                        script, prompts for unset fields)
   --ckdir AssignName NbName.extension
                         Check <course_dir>/feedback directory (change with
                         --odir) by printing studentIDs and matching files to
@@ -71,5 +77,6 @@ optional arguments:
   --backup nbgrader_step
                         Backup nbgrader_step directory to
                         <course_dir>/backups/<nbgrader_step-mm-dd-hh-mm>.zip
-  --nbhelp              Print quick reference for nbgrader and extra help
+  --nbhelp              Print quick reference for nbgrader and some extra
+                        helpful tips/fixes
  ```

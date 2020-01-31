@@ -1,3 +1,33 @@
+# BSD 3-Clause License
+
+# Copyright (c) 2019, Eric Lesiuta
+# All rights reserved.
+
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+
+# 1. Redistributions of source code must retain the above copyright notice, this
+#    list of conditions and the following disclaimer.
+
+# 2. Redistributions in binary form must reproduce the above copyright notice,
+#    this list of conditions and the following disclaimer in the documentation
+#    and/or other materials provided with the distribution.
+
+# 3. Neither the name of the copyright holder nor the names of its
+#    contributors may be used to endorse or promote products derived from
+#    this software without specific prior written permission.
+
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+# SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+# OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 import json
 import os
 import csv
@@ -28,9 +58,10 @@ EMAIL_CONFIG = {
 
 NB_HELP = """
 --Quick reference for nbgrader usage--
+https://nbgrader.readthedocs.io/en/stable/user_guide/philosophy.html
 https://nbgrader.readthedocs.io/en/stable/user_guide/creating_and_grading_assignments.html
-cd "course_directory"
 # make sure the nbgrader toolbar and formgrader extensions are enabled
+# run all commands from the "course_directory"
 nbgrader assign "assignment_name" # creates the database entry and assignment folder
 # create and edit the notebook(s) and any other files in source/assignment_name
 # convert notebook into assignment with View -> Cell Toolbar -> Create Assignment
@@ -61,7 +92,14 @@ argparse does not escape spaces with '\\' in arguments, use \"double quotes\"
 
 --Dependencies--
 this script does not use any external libraries, however it depends on the JSON metadata format used by nbgrader https://nbgrader.readthedocs.io/en/stable/contributor_guide/metadata.html
-all functions work on the ipynb/html files directly, it never touches the nbgrader database (gradebook.db)
+all functions work on the ipynb/html files directly, it never touches the nbgrader database (gradebook.db) or use the nbgrader api
+this allows for more flexibility to repair notebooks nbgrader does not know how to handle and provides robustness in the event of mismatched versions or weird configuration changes by others
+
+--Test Case Templates--
+there are some useful templates at the bottom of this script
+
+--Get the latest version--
+https://github.com/elesiuta/jupyter-nbgrader-helper
 """
 
 
@@ -132,6 +170,7 @@ def sendEmail(smtp_server, smtp_user, smtp_pwd, sender, recipient, subject, cc =
                 pass
             return 1
 
+
 ####### Functions for applying functions #######
 
 def applyTemplateSubmissions(func, template_path, submit_dir, file_name, assignment_name = None, delete = "n"):
@@ -177,6 +216,7 @@ def applyFuncDirectory(func, directory, assignment_name, file_name, file_extensi
                             studentID = os.path.split(os.path.split(os.path.split(fullPath)[0])[0])[1]
                             output.append(func(fullPath, studentID, *args, **kwargs))
     return output
+
 
 ####### Helper functions #######
 
@@ -251,6 +291,7 @@ def sortStudentGradeIds(student_dict, sorted_grade_id_list, grade_id_key = "grad
     for key in other_keys:
         new_student_dict[key] = student_dict[key]
     return new_student_dict
+
 
 ####### Main functions #######
 
@@ -530,12 +571,13 @@ def zipFeedback(student_dir, data):
 ####### Main #######
 
 if __name__ == "__main__":
-    readme = ("A collection of helpful functions for use with nbgrader, "
-              "designed to be placed in <course_dir>/nbhelper.py (see https://nbgrader.readthedocs.io/en/stable/user_guide/philosophy.html) "
-              "but can also be used offline or on alternative directories if you haven't been given proper access or want to easily test it in a safe environment")
+    readme = ("A collection of helpful functions for use with jupyter nbgrader. "
+              "Designed to be placed in <course_dir>/nbhelper.py by default with the structure: "
+              "<course_dir>/<nbgrader_step>/[<student_id>/]<AssignName>/<NbName>.<ipynb|html> "
+              "where nbgrader_step = source|release|submitted|autograded|feedback")
     parser = argparse.ArgumentParser(description=readme)
     parser.add_argument("--cdir", type=str, metavar="path", default=os.getcwd(), dest="cdir",
-                        help="Path to course directory (default: current directory) structured as <course_dir>/<nbgrader_step>/[<student_id>/]<AssignName>/<NbName>.<ipynb|html> where nbgrader_step = source|release|submitted|autograded|feedback")
+                        help="Override path to course_dir (default: current directory)")
     parser.add_argument("--sdir", type=str, metavar="path", default=None, dest="sdir",
                         help="Override path to source directory")
     parser.add_argument("--odir", type=str, metavar="path", default=None, dest="odir",
@@ -546,7 +588,7 @@ if __name__ == "__main__":
                         help="Update test points by using the corresponding file in source as a template and matching the cell's grade_id, also combines duplicate grade_ids")
     parser.add_argument("--meta", type=str, metavar=("AssignName", "NbName.ipynb"), nargs=2,
                         help="Fix cell metadata by replacing with that of source, matches based on grade_id")
-    parser.add_argument("--select", type=str, metavar="StudentID", nargs="*", default=None,
+    parser.add_argument("--select", type=str, metavar="StudentID", nargs="+", default=None,
                         help="Select specific students to fix their notebooks without having to run on the entire class")
     parser.add_argument("--info", type=str, metavar="AssignName",
                         help="Get some quick info (student id, file size, cell count, total execution count, [grade id : execution count]) of all submissions and writes to <course_dir>/reports/<AssignName>/info-<NbName>.csv")
@@ -569,7 +611,7 @@ if __name__ == "__main__":
     parser.add_argument("--backup", type=str, metavar="nbgrader_step", choices=["autograded","feedback","release","source","submitted"],
                         help="Backup nbgrader_step directory to <course_dir>/backups/<nbgrader_step-mm-dd-hh-mm>.zip")
     parser.add_argument("--nbhelp", action="store_true",
-                        help="Print quick reference for nbgrader and extra help")
+                        help="Print quick reference for nbgrader and some extra helpful tips/fixes")
     args = parser.parse_args()
 
     SCRIPT_DIR = os.getcwd()
