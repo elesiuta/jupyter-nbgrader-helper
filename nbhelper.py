@@ -45,7 +45,7 @@ import urllib.request
 
 ####### Config #######
 
-VERSION = "0.1.0"
+VERSION = "0.1.1"
 
 EMAIL_CONFIG = {
     "CC_ADDRESS": None, # "ccemail@domain.com" or True to cc MY_EMAIL_ADDRESS or False to omit
@@ -154,15 +154,15 @@ def sendEmail(smtp_server, smtp_user, smtp_pwd, sender, recipient, subject, cc =
                 smtp_server_instance.starttls()
                 smtp_server_instance.login(smtp_user, smtp_pwd)
                 smtp_server_instance.send_message(message)
-            return 0
+            return True
         except Exception as e:
             print ("Failed to send mail %s to %s" %(subject, recipient))
             print (e)
-            return 1
+            return False
     else:
         try:
             smtp_server.send_message(message)
-            return 0
+            return True
         except Exception as e:
             print ("Failed to send mail %s to %s" %(subject, recipient))
             print (e)
@@ -170,7 +170,7 @@ def sendEmail(smtp_server, smtp_user, smtp_pwd, sender, recipient, subject, cc =
                 smtp_server.quit()
             except:
                 pass
-            return 1
+            return False
 
 
 ####### Functions for applying functions #######
@@ -542,16 +542,20 @@ def emailFeedback(feedback_html_path, student_email_id, MY_SMTP_SERVER, MY_SMTP_
         CC_ADDRESS = MY_EMAIL_ADDRESS
     elif CC_ADDRESS == False  or CC_ADDRESS == "False":
         CC_ADDRESS = None
-    sendEmail(MY_SMTP_SERVER,
-              MY_SMTP_USERNAME,
-              MY_SMTP_PASSWORD,
-              MY_EMAIL_ADDRESS,
-              student_email_id + STUDENT_MAIL_DOMAIN,
-              EMAIL_SUBJECT,
-              CC_ADDRESS,
-              attachment_path = feedback_html_path,
-              body = msg)
+    success = sendEmail(MY_SMTP_SERVER,
+                        MY_SMTP_USERNAME,
+                        MY_SMTP_PASSWORD,
+                        MY_EMAIL_ADDRESS,
+                        student_email_id + STUDENT_MAIL_DOMAIN,
+                        EMAIL_SUBJECT,
+                        CC_ADDRESS,
+                        attachment_path = feedback_html_path,
+                        body = msg)
     time.sleep(float(EMAIL_CONFIG["EMAIL_DELAY"]))
+    if success:
+        return [student_email_id, "1"]
+    else:
+        return [student_email_id, "0"]
 
 def zipFeedback(student_dir, data):
     # convert to dict
@@ -861,19 +865,21 @@ def main():
         # smtp_server.ehlo()
         # smtp_server.starttls()
         # smtp_server.login(myUser, myPwd)
-        applyFuncDirectory(emailFeedback,
-                           student_dir,
-                           assign_name,
-                           nb_name,
-                           None,
-                           EMAIL_CONFIG["MY_SMTP_SERVER"],
-                           EMAIL_CONFIG["MY_SMTP_USERNAME"],
-                           EMAIL_CONFIG["MY_SMTP_PASSWORD"],
-                           EMAIL_CONFIG["MY_EMAIL_ADDRESS"],
-                           EMAIL_CONFIG["STUDENT_MAIL_DOMAIN"],
-                           EMAIL_CONFIG["EMAIL_SUBJECT"],
-                           EMAIL_CONFIG["CC_ADDRESS"])
+        log = applyFuncDirectory(emailFeedback,
+                                 student_dir,
+                                 assign_name,
+                                 nb_name,
+                                 None,
+                                 EMAIL_CONFIG["MY_SMTP_SERVER"],
+                                 EMAIL_CONFIG["MY_SMTP_USERNAME"],
+                                 EMAIL_CONFIG["MY_SMTP_PASSWORD"],
+                                 EMAIL_CONFIG["MY_EMAIL_ADDRESS"],
+                                 EMAIL_CONFIG["STUDENT_MAIL_DOMAIN"],
+                                 EMAIL_CONFIG["EMAIL_SUBJECT"],
+                                 EMAIL_CONFIG["CC_ADDRESS"])
         # smtp_server.quit()
+        header = [["Student ID", "Email Sent"]]
+        writeCsv(os.path.join(COURSE_DIR, "reports", assign_name, "email-" + nb_name + "-" + datetime.datetime.now().strftime("%m-%d-%H-%M") + ".csv"), header + log)
         print("Done")
 
     if args.ckdir is not None:
