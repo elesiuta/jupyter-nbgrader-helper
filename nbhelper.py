@@ -595,7 +595,7 @@ if __name__ == "__main__":
                         help="Get some quick info (student id, file size, cell count, total execution count, [grade id : execution count]) of all submissions and writes to <course_dir>/reports/<AssignName>/info-<NbName>.csv")
     parser.add_argument("--moss", type=str, metavar="AssignName",
                         help="Exports student answer cells as files and optionally check with moss using <course_dir>/moss/moss.pl")
-    parser.add_argument("--getmoss", type=str, metavar="userid",
+    parser.add_argument("--getmoss", action="store_true",
                         help="Downloads moss script with your userid to <course_dir>/moss/moss.pl then removes it after use")
     parser.add_argument("--dist", type=str, metavar="AssignName",
                         help="Gets distribution of scores across test cells from autograded notebooks and writes each student's results to <course_dir>/reports/<AssignName>/dist-<NbName>.csv")
@@ -641,10 +641,11 @@ if __name__ == "__main__":
         for student in args.select:
             shutil.move(os.path.join(original_student_dir, student), os.path.join(args.odir, student))
 
-    if args.getmoss is not None:
+    if args.getmoss == True:
         req = urllib.request.urlopen("http://moss.stanford.edu/general/scripts/mossnet")
         moss_script = req.read().decode()
-        moss_script = moss_script.replace("$userid=987654321;", "$userid=%s;" %(args.getmoss))
+        userid = input("Enter your moss userid: ")
+        moss_script = moss_script.replace("$userid=987654321;", "$userid=%s;" %(userid))
         os.makedirs(os.path.join(COURSE_DIR, "moss"), exist_ok=True)
         with open(os.path.join(COURSE_DIR, "moss", "moss.pl"), "w") as f:
             f.write(moss_script)
@@ -905,7 +906,7 @@ if __name__ == "__main__":
         shutil.make_archive(backup_name, "zip", student_dir)
         print("Done")
 
-    if args.getmoss is not None:
+    if args.getmoss == True:
         os.remove(os.path.join(COURSE_DIR, "moss", "moss.pl"))
 
     if args.select is not None:
