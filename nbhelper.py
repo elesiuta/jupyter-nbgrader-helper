@@ -45,7 +45,7 @@ import urllib.request
 
 ####### Config #######
 
-VERSION = "0.1.1"
+VERSION = "0.1.2"
 
 EMAIL_CONFIG = {
     "CC_ADDRESS": None, # "ccemail@domain.com" or True to cc MY_EMAIL_ADDRESS or False to omit
@@ -553,6 +553,7 @@ def emailFeedback(feedback_html_path, student_email_id, MY_SMTP_SERVER, MY_SMTP_
                         body = msg)
     time.sleep(float(EMAIL_CONFIG["EMAIL_DELAY"]))
     if success:
+        print("Sent email to: " + student_email_id + STUDENT_MAIL_DOMAIN)
         return [student_email_id, "1"]
     else:
         return [student_email_id, "0"]
