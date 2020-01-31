@@ -45,6 +45,8 @@ import urllib.request
 
 ####### Config #######
 
+VERSION = "0.1.0"
+
 EMAIL_CONFIG = {
     "CC_ADDRESS": None, # "ccemail@domain.com" or True to cc MY_EMAIL_ADDRESS or False to omit
     "EMAIL_DELAY": None, # time delay between sending each email in seconds
@@ -63,18 +65,17 @@ https://nbgrader.readthedocs.io/en/stable/user_guide/philosophy.html
 https://nbgrader.readthedocs.io/en/stable/user_guide/creating_and_grading_assignments.html
 # make sure the nbgrader toolbar and formgrader extensions are enabled
 # run all commands from the "course_directory"
-nbgrader assign "assignment_name" # creates the database entry and assignment folder
+$ nbgrader assign "assignment_name" # creates the database entry and assignment folder
 # create and edit the notebook(s) and any other files in source/assignment_name
 # convert notebook into assignment with View -> Cell Toolbar -> Create Assignment
 # mark necessary cells as 'Manually graded answer', 'Autograded answer', 'Autograder tests', and 'Read-only'
 # validate the source notebook(s) then generate the student versions of the notebook(s)
-nbgrader release "assignment_name" # release assignment to listed students through JupyterHub
-nbgrader collect "assignment_name" # collect assignments submitted through JupyterHub
-# can also be distributed and collected outside JupyterHub
-nbgrader autograde "assignment_name"
-# warning: only run the autograder in a VM or other restricted environment since python cannot be safely sandboxed
-nbgrader feedback "assignment_name" # generates feedback (does not distribute it to students)
-nbgrader export # exports grades as a csv file
+# after releasing, only hidden test cells can be modified without workarounds
+$ nbgrader release "assignment_name" # release assignment through JupyterHub (places in outbound exchange folder)
+$ nbgrader collect "assignment_name" # collect assignments submitted through JupyterHub (or use zip collect)
+$ nbgrader autograde "assignment_name" # warning: only run the autograder in a restricted environment
+$ nbgrader generate_feedback "assignment_name" # just feedback in <0.6.0 (do not release, uses exchange folder)
+$ nbgrader export # exports grades as a csv file
 
 --Workaround for getting errors on edits made after submissions received--
 https://github.com/jupyter/nbgrader/issues/1069
@@ -99,9 +100,9 @@ this allows for more flexibility to repair notebooks nbgrader does not know how 
 --Test Case Templates--
 there are some useful templates at the bottom of this script
 
---Get the latest version--
+--Version %s--
 https://github.com/elesiuta/jupyter-nbgrader-helper
-"""
+""" %(VERSION)
 
 
 ####### Generic functions #######
@@ -571,7 +572,7 @@ def zipFeedback(student_dir, data):
 
 ####### Main #######
 
-if __name__ == "__main__":
+def main():
     readme = ("A collection of helpful functions for use with jupyter nbgrader. "
               "Designed to be placed in <course_dir>/nbhelper.py by default with the structure: "
               "<course_dir>/<nbgrader_step>/[<student_id>/]<AssignName>/<NbName>.<ipynb|html> "
@@ -924,6 +925,9 @@ if __name__ == "__main__":
         for student in args.select:
             shutil.move(os.path.join(args.odir, student), os.path.join(original_student_dir, student))
         os.rmdir(args.odir)
+
+if __name__ == "__main__":
+    sys.exit(main())
 
 
 ####### Templates #######
