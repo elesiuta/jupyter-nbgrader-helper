@@ -15,6 +15,7 @@ import shutil
 ####### Config #######
 
 EMAIL_CONFIG = {
+    "CC_ADDRESS": None, # "ccemail@domain.com" or True to cc MY_EMAIL_ADDRESS or False to omit
     "EMAIL_DELAY": None, # time delay between sending each email in seconds
     "EMAIL_SUBJECT": None, # "email subject"
     "EMAIL_MESSAGE": "", # "email message text"
@@ -82,38 +83,37 @@ def writeJson(fname, data):
     with open(fname, "w", errors="ignore") as json_file:  
         json.dump(data, json_file, indent=1, separators=(',', ': '))
 
-def sendEmail(smtpServer, user, pwd, sender, recipient, subject, body = None, html = None, attachmentPath = None):
-    email_user = user
-    email_pwd = pwd
+def sendEmail(smtp_server, smtp_user, smtp_pwd, sender, recipient, subject, cc = None, body = None, html = None, attachment_path = None):
     message = email.message.EmailMessage()
     message["From"] = sender
     message["To"] = recipient
-    message["Cc"] = sender
+    if cc is not None:
+        message["Cc"] = cc
     message["Subject"] = subject
-    if body != None:
+    if body is not None:
         message.set_content(body)
-        if html != None:
+        if html is not None:
             message.add_alternative(html, subtype = "html")
-    elif html != None:
+    elif html is not None:
         message.set_content(html, subtype = "html")
-    if attachmentPath != None:
-        filename = os.path.basename(attachmentPath)
-        ctype, encoding = mimetypes.guess_type(attachmentPath)
+    if attachment_path is not None:
+        filename = os.path.basename(attachment_path)
+        ctype, encoding = mimetypes.guess_type(attachment_path)
         if ctype is None or encoding is not None:
             ctype = 'application/octet-stream'
         maintype, subtype = ctype.split('/', 1)
-        with open(attachmentPath, 'rb') as fp:
+        with open(attachment_path, 'rb') as fp:
             message.add_attachment(fp.read(),
                                    maintype=maintype,
                                    subtype=subtype,
                                    filename=filename)
-    if type(smtpServer) == str:
+    if type(smtp_server) == str:
         try:
-            with smtplib.SMTP(smtpServer, port=587) as smtp_server:
-                smtp_server.ehlo()
-                smtp_server.starttls()
-                smtp_server.login(email_user, email_pwd)
-                smtp_server.send_message(message)
+            with smtplib.SMTP(smtp_server, port=587) as smtp_server_instance:
+                smtp_server_instance.ehlo()
+                smtp_server_instance.starttls()
+                smtp_server_instance.login(smtp_user, smtp_pwd)
+                smtp_server_instance.send_message(message)
             return 0
         except Exception as e:
             print ("Failed to send mail %s to %s" %(subject, recipient))
@@ -121,13 +121,13 @@ def sendEmail(smtpServer, user, pwd, sender, recipient, subject, body = None, ht
             return 1
     else:
         try:
-            smtpServer.send_message(message)
+            smtp_server.send_message(message)
             return 0
         except Exception as e:
             print ("Failed to send mail %s to %s" %(subject, recipient))
             print (e)
             try:
-                smtpServer.quit()
+                smtp_server.quit()
             except:
                 pass
             return 1
@@ -142,11 +142,11 @@ def applyTemplateSubmissions(func, template_path, submit_dir, file_name, assignm
             for f in sorted(fileList):
                 fullPath = os.path.join(dirName, f)
                 folder = os.path.basename(dirName)
-                if (folder == assignment_name or assignment_name == None) and f == file_name:
+                if (folder == assignment_name or assignment_name is None) and f == file_name:
                     studentID = os.path.split(os.path.split(os.path.split(fullPath)[0])[0])[1]
                     studentNB = readJson(fullPath)
                     studentNB = func(template, studentNB, studentID)
-                    if studentNB != None:
+                    if studentNB is not None:
                         writeJson(fullPath, studentNB)
                 elif delete.lower() == "y":
                     os.remove(fullPath)
@@ -172,8 +172,8 @@ def applyFuncDirectory(func, directory, assignment_name, file_name, file_extensi
                 fullPath = os.path.join(dirName, f)
                 folder = os.path.basename(dirName)
                 if folder == assignment_name:
-                    if file_name == None or f == file_name:
-                        if file_extension == None or f.split(".")[-1] == file_extension:
+                    if file_name is None or f == file_name:
+                        if file_extension is None or f.split(".")[-1] == file_extension:
                             studentID = os.path.split(os.path.split(os.path.split(fullPath)[0])[0])[1]
                             output.append(func(fullPath, studentID, *args, **kwargs))
     return output
@@ -225,7 +225,7 @@ def writeAnswerCells(answer_dict, codeDir):
             f.writelines(answer_dict[student_id])
 
 def getStudentFileDir(course_dir, odir, nbgrader_step):
-    if odir == None:
+    if odir is None:
         student_dir = os.path.join(course_dir, nbgrader_step)
     else:
         student_dir = os.path.normpath(odir)
@@ -236,7 +236,7 @@ def getStudentFileDir(course_dir, odir, nbgrader_step):
 def getAssignmentFiles(source_dir, assignment_name, file_extension, replace_file_extension = None):
     assignment_dir = os.path.join(source_dir, assignment_name)
     assignment_files = [f for f in os.listdir(assignment_dir) if os.path.splitext(f)[1][1:] == file_extension]
-    if replace_file_extension == None:
+    if replace_file_extension is None:
         return assignment_files
     else:
         return [os.path.splitext(f)[0] + replace_file_extension for f in assignment_files]
@@ -353,7 +353,7 @@ def updateTestCells(template, student, student_id = ""):
                             found_student_cell = True
                             if student["cells"][i]["metadata"]["nbgrader"]["grade"] == True or "points" in student["cells"][i]["metadata"]["nbgrader"]:
                                 student["cells"][i]["metadata"]["nbgrader"]["grade"] = False
-                                temp = student["cells"][i]["metadata"]["nbgrader"].pop("points", None)
+                                _ = student["cells"][i]["metadata"]["nbgrader"].pop("points", None)
                                 modified = True
                     except:
                         pass
@@ -378,7 +378,7 @@ def updateTestCells(template, student, student_id = ""):
             pass
     if len(remove_cells) > 0:
         for i in reversed(remove_cells):
-            temp = student["cells"].pop(i)
+            _ = student["cells"].pop(i)
     # return updated notebook (probably still the same object but who cares)
     if modified:
         print("Updated test cells for:  " + student_id)
@@ -491,11 +491,23 @@ def getFeedbackScore(fullPath, studentID):
             print("Error for student: %s on line: %s" %(studentID, str(line)))
     return {"student_id": studentID, "total_score": total_score, "score_list": score_list, "score_totals": score_totals, "grade_id_list": grade_id_list}
 
-def emailFeedback(feedbackHtmlPath, emailId, myEmailServer, myUser, myPassword, myEmail, studentMailDomain, subject):
-    # with open(feedbackHtmlPath, "r", encoding="utf8", errors="replace") as f:
+def emailFeedback(feedback_html_path, student_email_id, MY_SMTP_SERVER, MY_SMTP_USERNAME, MY_SMTP_PASSWORD, MY_EMAIL_ADDRESS, STUDENT_MAIL_DOMAIN, EMAIL_SUBJECT, CC_ADDRESS):
+    # with open(feedback_html_path, "r", encoding="utf8", errors="replace") as f:
     #     feedbackHtml = f.read()
     msg = str(EMAIL_CONFIG["EMAIL_MESSAGE"])
-    sendEmail(myEmailServer, myUser, myPassword, myEmail, emailId + studentMailDomain, subject, attachmentPath = feedbackHtmlPath, body = msg)
+    if CC_ADDRESS == True or CC_ADDRESS == "True":
+        CC_ADDRESS = MY_EMAIL_ADDRESS
+    elif CC_ADDRESS == False  or CC_ADDRESS == "False":
+        CC_ADDRESS = None
+    sendEmail(MY_SMTP_SERVER,
+              MY_SMTP_USERNAME,
+              MY_SMTP_PASSWORD,
+              MY_EMAIL_ADDRESS,
+              student_email_id + STUDENT_MAIL_DOMAIN,
+              EMAIL_SUBJECT,
+              CC_ADDRESS,
+              attachment_path = feedback_html_path,
+              body = msg)
     time.sleep(float(EMAIL_CONFIG["EMAIL_DELAY"]))
 
 def zipFeedback(student_dir, data):
@@ -534,7 +546,7 @@ if __name__ == "__main__":
                         help="Update test points by using the corresponding file in source as a template and matching the cell's grade_id, also combines duplicate grade_ids")
     parser.add_argument("--meta", type=str, metavar=("AssignName", "NbName.ipynb"), nargs=2,
                         help="Fix cell metadata by replacing with that of source, matches based on grade_id")
-    parser.add_argument("--select", type=str, metavar="StudentID", nargs="*", default=[],
+    parser.add_argument("--select", type=str, metavar="StudentID", nargs="*", default=None,
                         help="Select specific students to fix their notebooks without having to run on the entire class")
     parser.add_argument("--info", type=str, metavar="AssignName",
                         help="Get some quick info (student id, file size, cell count, total execution count, [grade id : execution count]) of all submissions and writes to <course_dir>/reports/<AssignName>/info-<NbName>.csv")
@@ -545,7 +557,7 @@ if __name__ == "__main__":
     parser.add_argument("--fdist", type=str, metavar="AssignName",
                         help="Gets distribution of scores across test cells from feedback (factoring in manual grading) and writes each student's results to <course_dir>/reports/<AssignName>/fdist-<NbName>.csv")
     parser.add_argument("--email", type=str, metavar=("AssignName|zip", "NbName.html|feedback.zip"), nargs=2,
-                        help="Email feedback to students (see config in script, prompts for unset fields)")
+                        help="Email feedback to students (see EMAIL_CONFIG in script, prompts for unset fields)")
     parser.add_argument("--ckdir", type=str, metavar=("AssignName", "NbName.extension"), nargs=2,
                         help="Check <course_dir>/feedback directory (change with --odir) by printing studentIDs and matching files to make sure it is structured properly")
     parser.add_argument("--ckdup", type=str, metavar="NbName.extension", nargs="?",
@@ -566,9 +578,9 @@ if __name__ == "__main__":
     else:
         COURSE_DIR = None
         print("Invalid course directory: " + str(args.cdir))
-    if args.sdir == None and COURSE_DIR != None:
+    if args.sdir is None and COURSE_DIR is not None:
         SOURCE_DIR = os.path.join(COURSE_DIR, "source")
-    elif args.sdir != None:
+    elif args.sdir is not None:
         SOURCE_DIR = os.path.normpath(args.sdir)
     else:
         SOURCE_DIR = None
@@ -577,14 +589,14 @@ if __name__ == "__main__":
     if args.nbhelp:
         print(NB_HELP)
 
-    if len(args.select) > 0:
+    if args.select is not None:
         original_student_dir = getStudentFileDir(COURSE_DIR, args.odir, "submitted")
         args.odir = os.path.join(COURSE_DIR, "nbhelper-select-tmp")
         os.mkdir(args.odir)
         for student in args.select:
             shutil.move(os.path.join(original_student_dir, student), os.path.join(args.odir, student))
 
-    if args.add != None:
+    if args.add is not None:
         assign_name, nb_name = args.add
         template_path = os.path.join(SOURCE_DIR, assign_name, nb_name)
         student_dir = getStudentFileDir(COURSE_DIR, args.odir, "submitted")
@@ -595,7 +607,7 @@ if __name__ == "__main__":
         applyTemplateSubmissions(addNbgraderCell, template_path, student_dir, nb_name, assign_name, delete="n")
         print("Done")
 
-    if args.fix != None:
+    if args.fix is not None:
         assign_name, nb_name = args.fix
         template_path = os.path.join(SOURCE_DIR, assign_name, nb_name)
         student_dir = getStudentFileDir(COURSE_DIR, args.odir, "submitted")
@@ -606,7 +618,7 @@ if __name__ == "__main__":
         applyTemplateSubmissions(updateTestCells, template_path, student_dir, nb_name, assign_name, delete="n")
         print("Done")
 
-    if args.meta != None:
+    if args.meta is not None:
         assign_name, nb_name = args.meta
         template_path = os.path.join(SOURCE_DIR, assign_name, nb_name)
         student_dir = getStudentFileDir(COURSE_DIR, args.odir, "submitted")
@@ -617,7 +629,7 @@ if __name__ == "__main__":
         applyTemplateSubmissions(updateCellsMeta, template_path, student_dir, nb_name, assign_name, delete="n")
         print("Done")
 
-    if args.info != None:
+    if args.info is not None:
         assign_name = args.info
         nb_names = getAssignmentFiles(SOURCE_DIR, assign_name, "ipynb")
         student_dir = getStudentFileDir(COURSE_DIR, args.odir, "submitted")
@@ -627,7 +639,7 @@ if __name__ == "__main__":
             writeCsv(os.path.join(COURSE_DIR, "reports", assign_name, "info-" + os.path.splitext(nb_name)[0] + ".csv"), header + data)
         print("Done")
 
-    if args.moss != None:
+    if args.moss is not None:
         assign_name = args.moss
         nb_names = getAssignmentFiles(SOURCE_DIR, assign_name, "ipynb")
         student_dir = getStudentFileDir(COURSE_DIR, args.odir, "submitted")
@@ -679,7 +691,7 @@ if __name__ == "__main__":
         os.chdir(SCRIPT_DIR)
         print("Done")
 
-    if args.dist != None:
+    if args.dist is not None:
         assign_name = args.dist
         nb_names = getAssignmentFiles(SOURCE_DIR, assign_name, "ipynb")
         student_dir = getStudentFileDir(COURSE_DIR, args.odir, "autograded")
@@ -729,7 +741,7 @@ if __name__ == "__main__":
             writeCsv(os.path.join(COURSE_DIR, "reports", assign_name, "dist-" + os.path.splitext(nb_name)[0] + ".csv"), data)
         print("Done")
 
-    if args.fdist != None:
+    if args.fdist is not None:
         assign_name = args.fdist
         nb_names = getAssignmentFiles(SOURCE_DIR, assign_name, "ipynb", "")
         student_dir = getStudentFileDir(COURSE_DIR, args.odir, "feedback")
@@ -773,38 +785,43 @@ if __name__ == "__main__":
             writeCsv(os.path.join(COURSE_DIR, "reports", assign_name, "fdist-" + nb_name + ".csv"), data)
         print("Done")
 
-    if args.email != None:
+    if args.email is not None:
         assign_name, nb_name = args.email
         student_dir = getStudentFileDir(COURSE_DIR, args.odir, "feedback")
         for key in EMAIL_CONFIG:
-            if EMAIL_CONFIG[key] == None:
+            if EMAIL_CONFIG[key] is None:
                 EMAIL_CONFIG[key] = input("Enter value for %s: " %(key))
-        subject = EMAIL_CONFIG["EMAIL_SUBJECT"]
-        studentMailDomain = EMAIL_CONFIG["STUDENT_MAIL_DOMAIN"]
-        myEmailAddress = EMAIL_CONFIG["MY_EMAIL_ADDRESS"]
-        myUser = EMAIL_CONFIG["MY_SMTP_USERNAME"]
-        myPwd = EMAIL_CONFIG["MY_SMTP_PASSWORD"]
-        myEmailServer = EMAIL_CONFIG["MY_SMTP_SERVER"]
-        # smtp_server = smtplib.SMTP(myEmailServer, port=587)
+        # smtp_server = smtplib.SMTP(EMAIL_CONFIG["MY_SMTP_SERVER"], port=587)
         # smtp_server.ehlo()
         # smtp_server.starttls()
         # smtp_server.login(myUser, myPwd)
-        applyFuncDirectory(emailFeedback, student_dir, assign_name, nb_name, None, myEmailServer, myUser, myPwd, myEmailAddress, studentMailDomain, subject)
+        applyFuncDirectory(emailFeedback,
+                           student_dir,
+                           assign_name,
+                           nb_name,
+                           None,
+                           EMAIL_CONFIG["MY_SMTP_SERVER"],
+                           EMAIL_CONFIG["MY_SMTP_USERNAME"],
+                           EMAIL_CONFIG["MY_SMTP_PASSWORD"],
+                           EMAIL_CONFIG["MY_EMAIL_ADDRESS"],
+                           EMAIL_CONFIG["STUDENT_MAIL_DOMAIN"],
+                           EMAIL_CONFIG["EMAIL_SUBJECT"],
+                           EMAIL_CONFIG["CC_ADDRESS"])
         # smtp_server.quit()
         print("Done")
 
-    if args.ckdir != None:
+    if args.ckdir is not None:
         assign_name, nb_name = args.ckdir
         student_dir = getStudentFileDir(COURSE_DIR, args.odir, "feedback")
         applyFuncDirectory(printFileNames, student_dir, assign_name, nb_name, None)
         print("Done")
 
-    if args.ckdup != None:
+    if args.ckdup is not None:
         student_dir = getStudentFileDir(COURSE_DIR, args.odir, "submitted")
         applyFuncFiles(checkDuplicates, student_dir, args.ckdup)
         print("Done")
 
-    if args.zip != None:
+    if args.zip is not None:
         student_dir = getStudentFileDir(COURSE_DIR, args.odir, "feedback")
         # get list of students and files
         data = []
@@ -814,7 +831,7 @@ if __name__ == "__main__":
         zipFeedback(student_dir, data)
         print("Done")
 
-    if args.zipfiles != None:
+    if args.zipfiles is not None:
         student_dir = getStudentFileDir(COURSE_DIR, args.odir, "feedback")
         # get list of students and files
         data = []
@@ -824,7 +841,7 @@ if __name__ == "__main__":
         zipFeedback(student_dir, data)
         print("Done")
         
-    if args.backup != None:
+    if args.backup is not None:
         student_dir = getStudentFileDir(COURSE_DIR, args.odir, args.backup)
         # prep backup
         backup_dir = os.path.join(COURSE_DIR, "backups")
@@ -835,7 +852,7 @@ if __name__ == "__main__":
         shutil.make_archive(backup_name, "zip", student_dir)
         print("Done")
 
-    if len(args.select) > 0:
+    if args.select is not None:
         for student in args.select:
             shutil.move(os.path.join(args.odir, student), os.path.join(original_student_dir, student))
         os.rmdir(args.odir)
