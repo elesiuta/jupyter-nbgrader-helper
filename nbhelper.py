@@ -387,6 +387,43 @@ def updateTestCells(template, student, student_id = ""):
         print("No changes made for:     " + student_id)
         return None
 
+def updateCellsMeta(template, student, student_id = ""):
+    modified = False
+    # update points in test cases
+    for cell in template["cells"]:
+        try:
+            grade_id = cell["metadata"]["nbgrader"]["grade_id"]
+            found_student_cell = False
+            for i in range(len(student["cells"])):
+                try:
+                    if student["cells"][i]["metadata"]["nbgrader"]["grade_id"] == grade_id:
+                        found_student_cell = True
+                        if student["cells"][i]["cell_type"] != cell["cell_type"]:
+                            student["cells"][i]["cell_type"] = cell["cell_type"]
+                            modified = True
+                        if student["cells"][i]["metadata"] != cell["metadata"]:
+                            student["cells"][i]["metadata"] = cell["metadata"]
+                            modified = True
+                        if "outputs" not in student["cells"][i]:
+                            student["cells"][i]["outputs"] = []
+                            modified = True
+                        if "execution_count" not in student["cells"][i]:
+                            student["cells"][i]["execution_count"] = 0
+                            modified = True
+                except:
+                    pass
+            if not found_student_cell:
+                print("Student: %s is missing test cell: %s" %(student_id, grade_id))
+        except:
+            pass
+    # return updated notebook (probably still the same object but who cares)
+    if modified:
+        print("Updated cell metadata for:  " + student_id)
+        return student
+    else:
+        print("No changes made for:     " + student_id)
+        return None
+
 def quickInfo(fullPath, studentID):
     studentNB = readJson(fullPath)
     studentSize = os.path.getsize(fullPath)
@@ -495,6 +532,8 @@ if __name__ == "__main__":
                         help="Add missing nbgrader cell metadata and test cells to submissions using the corresponding file in source as a template by matching function names, template must be updated with nbgrader cells")
     parser.add_argument("--fix", type=str, metavar=("AssignName", "NbName.ipynb"), nargs=2,
                         help="Update test points by using the corresponding file in source as a template and matching the cell's grade_id, also combines duplicate grade_ids")
+    parser.add_argument("--meta", type=str, metavar=("AssignName", "NbName.ipynb"), nargs=2,
+                        help="Fix cell metadata by replacing with that of source, matches based on grade_id")
     parser.add_argument("--info", type=str, metavar="AssignName",
                         help="Get some quick info (student id, file size, cell count, total execution count, [grade id : execution count]) of all submissions and writes to <course_dir>/reports/<AssignName>/info-<NbName>.csv")
     parser.add_argument("--moss", type=str, metavar="AssignName",
@@ -556,6 +595,17 @@ if __name__ == "__main__":
         # else:
         #     delete = "n"
         applyTemplateSubmissions(updateTestCells, template_path, student_dir, nb_name, assign_name, delete="n")
+        print("Done")
+
+    if args.meta != None:
+        assign_name, nb_name = args.meta
+        template_path = os.path.join(SOURCE_DIR, assign_name, nb_name)
+        student_dir = getStudentFileDir(COURSE_DIR, args.odir, "submitted")
+        # if args.offline:
+        #     delete = input("Delete other files (!=NbName.ipynb) from submission folder (y/N)? ")
+        # else:
+        #     delete = "n"
+        applyTemplateSubmissions(updateCellsMeta, template_path, student_dir, nb_name, assign_name, delete="n")
         print("Done")
 
     if args.info != None:
