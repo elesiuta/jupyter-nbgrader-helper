@@ -522,11 +522,11 @@ if __name__ == "__main__":
               "designed to be placed in <course_dir>/nbhelper.py (see https://nbgrader.readthedocs.io/en/stable/user_guide/philosophy.html) "
               "but can also be used offline or on alternative directories if you haven't been given proper access or want to easily test it in a safe environment")
     parser = argparse.ArgumentParser(description=readme)
-    parser.add_argument("--cdir", type=str, metavar="path", default=os.getcwd(),
+    parser.add_argument("--cdir", type=str, metavar="path", default=os.getcwd(), dest="cdir",
                         help="Path to course directory (default: current directory) structured as <course_dir>/<nbgrader_step>/[<student_id>/]<AssignName>/<NbName>.<ipynb|html> where nbgrader_step = source|release|submitted|autograded|feedback")
-    parser.add_argument("--sdir", type=str, metavar="path", default=None,
+    parser.add_argument("--sdir", type=str, metavar="path", default=None, dest="sdir",
                         help="Override path to source directory")
-    parser.add_argument("--odir", type=str, metavar="path", default=None,
+    parser.add_argument("--odir", type=str, metavar="path", default=None, dest="odir",
                         help="Override path to the submitted, autograded, or feedback directory")
     parser.add_argument("--add", type=str, metavar=("AssignName", "NbName.ipynb"), nargs=2,
                         help="Add missing nbgrader cell metadata and test cells to submissions using the corresponding file in source as a template by matching function names, template must be updated with nbgrader cells")
@@ -534,6 +534,8 @@ if __name__ == "__main__":
                         help="Update test points by using the corresponding file in source as a template and matching the cell's grade_id, also combines duplicate grade_ids")
     parser.add_argument("--meta", type=str, metavar=("AssignName", "NbName.ipynb"), nargs=2,
                         help="Fix cell metadata by replacing with that of source, matches based on grade_id")
+    parser.add_argument("--select", type=str, metavar="StudentID", nargs="*", default=[],
+                        help="Select specific students to fix their notebooks without having to run on the entire class")
     parser.add_argument("--info", type=str, metavar="AssignName",
                         help="Get some quick info (student id, file size, cell count, total execution count, [grade id : execution count]) of all submissions and writes to <course_dir>/reports/<AssignName>/info-<NbName>.csv")
     parser.add_argument("--moss", type=str, metavar="AssignName",
@@ -574,6 +576,13 @@ if __name__ == "__main__":
 
     if args.nbhelp:
         print(NB_HELP)
+
+    if len(args.select) > 0:
+        original_student_dir = getStudentFileDir(COURSE_DIR, args.odir, "submitted")
+        args.odir = os.path.join(COURSE_DIR, "nbhelper-select-tmp")
+        os.mkdir(args.odir)
+        for student in args.select:
+            shutil.move(os.path.join(original_student_dir, student), os.path.join(args.odir, student))
 
     if args.add != None:
         assign_name, nb_name = args.add
@@ -825,6 +834,11 @@ if __name__ == "__main__":
         # backup
         shutil.make_archive(backup_name, "zip", student_dir)
         print("Done")
+
+    if len(args.select) > 0:
+        for student in args.select:
+            shutil.move(os.path.join(args.odir, student), os.path.join(original_student_dir, student))
+        os.rmdir(args.odir)
 
 
 ####### Templates #######
