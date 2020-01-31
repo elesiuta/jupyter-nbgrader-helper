@@ -735,13 +735,20 @@ if __name__ == "__main__":
             print("Failed to construct base file")
         # execute command
         os.chdir(os.path.join(COURSE_DIR, "moss"))
-        wslCommand = "bash -c \"./%s\"" %(command)
-        print(command)
-        submit = input("execute command (y/N/wsl)? ")
-        if submit.lower() == "y":
-            os.system(command)
-        elif submit.lower() == "wsl":
-            os.system(wslCommand)
+        if os.name == "nt":
+            wslCommand = "bash -c \"./%s\"" %(command)
+            print(command)
+            submit = input("execute command (y/N/wsl)? ")
+            if submit.lower() == "y":
+                os.system(command)
+            elif submit.lower() == "wsl":
+                os.system(wslCommand)
+        else:
+            command = "./" + command
+            print(command)
+            submit = input("execute command (y/N)? ")
+            if submit.lower() == "y":
+                os.system(command)
         os.chdir(SCRIPT_DIR)
         print("Done")
 
