@@ -574,6 +574,15 @@ def zipFeedback(student_dir, data):
             for f in studentDict[studentID]:
                 z.write(f, os.path.basename(f))
 
+def chmod(fullPath, studentID, permission):
+    octal = eval("0o" + permission)
+    os.chmod(fullPath, octal)
+    new_permission = str(oct(os.stat(fullPath).st_mode))
+    if new_permission[-len(permission):] != permission:
+        os.system("chmod " + permission + " \"" + os.path.abspath(fullPath) + "\"")
+        new_permission = str(oct(os.stat(fullPath).st_mode))
+        if new_permission[-len(permission):] != permission:
+            print("Could not change permissions for %s: %s" %(studentID, fullPath))
 
 ####### Main #######
 
@@ -613,6 +622,8 @@ def main():
                         help="Check <course_dir>/feedback directory (change with --odir) by printing studentIDs and matching files to make sure it is structured properly")
     parser.add_argument("--ckdup", type=str, metavar="NbName.extension", nargs="?",
                         help="Checks all submitted directories for NbName.extension and reports subfolders containing multiple files of the same extension")
+    parser.add_argument("--chmod", type=str, metavar=("rwx", "AssignName"), nargs=2,
+                        help="Run chmod rwx on all submissions for an assignment (linux only)")
     parser.add_argument("--zip", type=str, metavar="AssignName", nargs="+",
                         help="Combine multiple feedbacks into <course_dir>/feedback/<student_id>/zip/feedback.zip")
     parser.add_argument("--zipfiles", type=str, metavar="NbName.html", nargs="+",
@@ -701,6 +712,14 @@ def main():
             header = [["Student ID", "File Size", "Cell Count", "Total Execution Count", "[grade id : execution count]"]]
             data = applyFuncDirectory(quickInfo, student_dir, assign_name, nb_name, None)
             writeCsv(os.path.join(COURSE_DIR, "reports", assign_name, "info-" + os.path.splitext(nb_name)[0] + ".csv"), header + data)
+        print("Done")
+
+    if args.chmod is not None:
+        assign_name = args.chmod[1]
+        nb_names = getAssignmentFiles(SOURCE_DIR, assign_name, "ipynb")
+        student_dir = getStudentFileDir(COURSE_DIR, args.odir, "submitted")
+        for nb_name in nb_names:
+            applyFuncDirectory(chmod, student_dir, assign_name, nb_name, None, args.chmod[0])
         print("Done")
 
     if args.moss is not None:
