@@ -45,7 +45,7 @@ import urllib.request
 
 ####### Config #######
 
-VERSION = "0.1.2"
+VERSION = "0.1.3"
 
 EMAIL_CONFIG = {
     "CC_ADDRESS": None, # "ccemail@domain.com" or True to cc MY_EMAIL_ADDRESS or False to omit

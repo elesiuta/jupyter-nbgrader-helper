@@ -12,6 +12,7 @@ usage: nbhelper.py [-h] [--cdir path] [--sdir path] [--odir path]
                    [--email AssignName|zip NbName.html|feedback.zip]
                    [--ckdir AssignName NbName.extension]
                    [--ckdup [NbName.extension]]
+                   [--chmod rwx AssignName]
                    [--zip AssignName [AssignName ...]]
                    [--zipfiles NbName.html [NbName.html ...]]
                    [--backup nbgrader_step] [--nbhelp]
@@ -69,6 +70,9 @@ optional arguments:
                         Checks all submitted directories for NbName.extension
                         and reports subfolders containing multiple files of
                         the same extension
+  --chmod rwx AssignName
+                        Run chmod rwx on all submissions for an assignment
+                        (linux only)
   --zip AssignName [AssignName ...]
                         Combine multiple feedbacks into
                         <course_dir>/feedback/<student_id>/zip/feedback.zip
