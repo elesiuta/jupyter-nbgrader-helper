@@ -45,7 +45,7 @@ import urllib.request
 
 ####### Config #######
 
-VERSION = "0.1.3"
+VERSION = "0.1.4"
 
 EMAIL_CONFIG = {
     "CC_ADDRESS": None, # "ccemail@domain.com" or True to cc MY_EMAIL_ADDRESS or False to omit
@@ -584,6 +584,7 @@ def chmod(fullPath, studentID, permission):
         if new_permission[-len(permission):] != permission:
             print("Could not change permissions for %s: %s" %(studentID, fullPath))
 
+
 ####### Main #######
 
 def main():
@@ -599,7 +600,7 @@ def main():
     parser.add_argument("--odir", type=str, metavar="path", default=None, dest="odir",
                         help="Override path to the submitted, autograded, or feedback directory")
     parser.add_argument("--add", type=str, metavar=("AssignName", "NbName.ipynb"), nargs=2,
-                        help="Add missing nbgrader cell metadata and test cells to submissions using the corresponding file in source as a template by matching function names, template must be updated with nbgrader cells")
+                        help="Add missing nbgrader cell metadata and test cells to submissions using the corresponding file in source as a template by matching function names (python only), template must be updated with nbgrader cells")
     parser.add_argument("--fix", type=str, metavar=("AssignName", "NbName.ipynb"), nargs=2,
                         help="Update test points by using the corresponding file in source as a template and matching the cell's grade_id, also combines duplicate grade_ids")
     parser.add_argument("--meta", type=str, metavar=("AssignName", "NbName.ipynb"), nargs=2,

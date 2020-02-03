@@ -15,7 +15,8 @@ usage: nbhelper.py [-h] [--cdir path] [--sdir path] [--odir path]
                    [--chmod rwx AssignName]
                    [--zip AssignName [AssignName ...]]
                    [--zipfiles NbName.html [NbName.html ...]]
-                   [--backup nbgrader_step] [--nbhelp]
+                   [--backup nbgrader_step]
+                   [--nbhelp]
 
 A collection of helpful functions for use with jupyter nbgrader. Designed to
 be placed in <course_dir>/nbhelper.py by default with the structure:
@@ -32,8 +33,8 @@ optional arguments:
   --add AssignName NbName.ipynb
                         Add missing nbgrader cell metadata and test cells to
                         submissions using the corresponding file in source as
-                        a template by matching function names, template must
-                        be updated with nbgrader cells
+                        a template by matching function names (python only),
+                        template must be updated with nbgrader cells
   --fix AssignName NbName.ipynb
                         Update test points by using the corresponding file in
                         source as a template and matching the cell's grade_id,
