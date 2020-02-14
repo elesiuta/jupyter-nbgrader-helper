@@ -46,7 +46,7 @@ import typing
 
 ####### Config #######
 
-VERSION = "0.1.8"
+VERSION = "0.1.9"
 
 EMAIL_CONFIG = {
     "CC_ADDRESS": None, # "ccemail@domain.com" or SELF to cc MY_EMAIL_ADDRESS
@@ -63,20 +63,24 @@ EMAIL_CONFIG = {
 
 NB_HELP = """
 --Quick reference for nbgrader usage--
+# https://xkcd.com/293/
 https://nbgrader.readthedocs.io/en/stable/user_guide/philosophy.html
 https://nbgrader.readthedocs.io/en/stable/user_guide/creating_and_grading_assignments.html
-# make sure the nbgrader toolbar and formgrader extensions are enabled
-# run all commands from the "course_directory"
-$ nbgrader assign "assignment_name" # creates the database entry and assignment folder
-# create and edit the notebook(s) and any other files in source/assignment_name
-# convert notebook into assignment with View -> Cell Toolbar -> Create Assignment
-# mark necessary cells as 'Manually graded answer', 'Autograded answer', 'Autograder tests', and 'Read-only'
-# validate the source notebook(s) then generate the student versions of the notebook(s)
-# after releasing, only hidden test cells can be modified without workarounds
-$ nbgrader release "assignment_name" # release assignment through JupyterHub (places in outbound exchange folder)
-$ nbgrader collect "assignment_name" # collect assignments submitted through JupyterHub (or use zip collect)
-$ nbgrader autograde "assignment_name" # warning: only run the autograder in a restricted environment
-$ nbgrader generate_feedback "assignment_name" # just feedback in <0.6.0 (do not release, uses exchange folder)
+https://nbgrader.readthedocs.io/en/stable/command_line_tools/index.html
+# summary of steps for those who are truly lazy
+0.a) make sure the nbgrader toolbar and formgrader extensions are enabled (most actions can be performed from here)
+0.b) otherwise, run all commands from the "course_directory"
+1.a) create the assignment using formgrader
+2.a) create and edit the notebook(s) and any other files in source/assignment_name
+2.b) convert notebook into assignment with View -> Cell Toolbar -> Create Assignment
+2.c) mark necessary cells as 'Manually graded answer', 'Autograded answer', 'Autograder tests', and 'Read-only'
+3.a) validate the source notebook(s) then generate the student versions of the notebook(s)
+4.a) after releasing, only hidden test cells can be modified without workarounds
+4.b) release assignment through formgrader if using JupyterHub (places in outbound exchange folder)
+4.c) collect assignments submitted through JupyterHub using formgrader (or use zip collect for external)
+5. Autgrading and Feedback
+$ nbgrader autograde "assignment_name" # warning: only run the autograder in restricted environments and backup submissions first
+$ nbgrader generate_feedback "assignment_name" # just feedback in <0.6.0 (do not release, uses non-private outbound exchange folder)
 $ nbgrader export # exports grades as a csv file
 
 --Workaround for getting errors on edits made after submissions received--
