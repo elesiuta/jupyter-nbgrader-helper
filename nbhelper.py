@@ -46,7 +46,7 @@ import typing
 
 ####### Config #######
 
-VERSION = "0.1.9"
+VERSION = "0.1.10"
 
 EMAIL_CONFIG = {
     "CC_ADDRESS": None, # "ccemail@domain.com" or SELF to cc MY_EMAIL_ADDRESS
@@ -625,7 +625,7 @@ def main():
     parser.add_argument("--meta", type=str, metavar=("AssignName", "NbName.ipynb"), nargs=2,
                         help="Fix cell metadata by replacing with that of source, matches based on grade_id")
     parser.add_argument("--select", type=str, metavar="StudentID", nargs="+", default=None,
-                        help="Select specific students to fix their notebooks without having to run on the entire class")
+                        help="Select specific students to fix their notebooks without having to run on the entire class (WARNING: moves student(s) to <course_dir>/nbhelper-select-tmp then moves back unless an error was encountered)")
     parser.add_argument("--info", type=str, metavar="AssignName",
                         help="Get some quick info (student id, file size, cell count, total execution count, [grade id : execution count]) of all submissions and writes to <course_dir>/reports/<AssignName>/info-<NbName>.csv")
     parser.add_argument("--moss", type=str, metavar="AssignName",
