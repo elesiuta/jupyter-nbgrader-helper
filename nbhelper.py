@@ -45,13 +45,14 @@ import urllib.request
 
 ####### Config #######
 
-VERSION = "0.1.4"
+VERSION = "0.1.5"
 
 EMAIL_CONFIG = {
-    "CC_ADDRESS": None, # "ccemail@domain.com" or True to cc MY_EMAIL_ADDRESS or False to omit
+    "CC_ADDRESS": None, # "ccemail@domain.com" or SELF to cc MY_EMAIL_ADDRESS
     "EMAIL_DELAY": None, # time delay between sending each email in seconds
     "EMAIL_SUBJECT": None, # "email subject"
-    "EMAIL_MESSAGE": "", # "email message text"
+    "EMAIL_MESSAGE": None, # "email message text"
+    "EMAIL_HTML": None, # "email message html" or FEEDBACK
     "STUDENT_MAIL_DOMAIN": None, # "@domain.com"
     "MY_EMAIL_ADDRESS": None, # "myemail@domain.com"
     "MY_SMTP_SERVER": None, # "smtp.domain.com", script uses TLS on port 587
@@ -534,26 +535,27 @@ def getFeedbackScore(fullPath, studentID):
             print("Error for student: %s on line: %s" %(studentID, str(line)))
     return {"student_id": studentID, "total_score": total_score, "score_list": score_list, "score_totals": score_totals, "grade_id_list": grade_id_list}
 
-def emailFeedback(feedback_html_path, student_email_id, MY_SMTP_SERVER, MY_SMTP_USERNAME, MY_SMTP_PASSWORD, MY_EMAIL_ADDRESS, STUDENT_MAIL_DOMAIN, EMAIL_SUBJECT, CC_ADDRESS):
-    # with open(feedback_html_path, "r", encoding="utf8", errors="replace") as f:
-    #     feedbackHtml = f.read()
-    msg = str(EMAIL_CONFIG["EMAIL_MESSAGE"])
-    if CC_ADDRESS == True or CC_ADDRESS == "True":
-        CC_ADDRESS = MY_EMAIL_ADDRESS
-    elif CC_ADDRESS == False  or CC_ADDRESS == "False":
-        CC_ADDRESS = None
-    success = sendEmail(MY_SMTP_SERVER,
-                        MY_SMTP_USERNAME,
-                        MY_SMTP_PASSWORD,
-                        MY_EMAIL_ADDRESS,
-                        student_email_id + STUDENT_MAIL_DOMAIN,
-                        EMAIL_SUBJECT,
-                        CC_ADDRESS,
-                        attachment_path = feedback_html_path,
-                        body = msg)
+def emailFeedback(feedback_html_path, student_email_id):
+    if EMAIL_CONFIG["EMAIL_HTML"] == "FEEDBACK":
+        with open(feedback_html_path, "r", encoding="utf8", errors="replace") as f:
+            email_html = f.read()
+        attachment_path = None
+    else:
+        email_html = EMAIL_CONFIG["EMAIL_HTML"]
+        attachment_path = feedback_html_path
+    success = sendEmail(EMAIL_CONFIG["MY_SMTP_SERVER"],
+                        EMAIL_CONFIG["MY_SMTP_USERNAME"],
+                        EMAIL_CONFIG["MY_SMTP_PASSWORD"],
+                        EMAIL_CONFIG["MY_EMAIL_ADDRESS"],
+                        student_email_id + EMAIL_CONFIG["STUDENT_MAIL_DOMAIN"],
+                        EMAIL_CONFIG["EMAIL_SUBJECT"],
+                        cc = EMAIL_CONFIG["CC_ADDRESS"],
+                        attachment_path = attachment_path,
+                        body = EMAIL_CONFIG["EMAIL_MESSAGE"],
+                        html = email_html)
     time.sleep(float(EMAIL_CONFIG["EMAIL_DELAY"]))
     if success:
-        print("Sent email to: " + student_email_id + STUDENT_MAIL_DOMAIN)
+        print("Sent email to: " + student_email_id + EMAIL_CONFIG["STUDENT_MAIL_DOMAIN"])
         return [student_email_id, "1"]
     else:
         return [student_email_id, "0"]
@@ -882,22 +884,16 @@ def main():
         for key in EMAIL_CONFIG:
             if EMAIL_CONFIG[key] is None:
                 EMAIL_CONFIG[key] = input("Enter value for %s: " %(key))
+                if EMAIL_CONFIG[key].strip() == "":
+                    EMAIL_CONFIG[key] = None
+        if EMAIL_CONFIG["CC_ADDRESS"] == "SELF":
+            EMAIL_CONFIG["CC_ADDRESS"] = EMAIL_CONFIG["MY_EMAIL_ADDRESS"]
         # smtp_server = smtplib.SMTP(EMAIL_CONFIG["MY_SMTP_SERVER"], port=587)
         # smtp_server.ehlo()
         # smtp_server.starttls()
         # smtp_server.login(myUser, myPwd)
-        log = applyFuncDirectory(emailFeedback,
-                                 student_dir,
-                                 assign_name,
-                                 nb_name,
-                                 None,
-                                 EMAIL_CONFIG["MY_SMTP_SERVER"],
-                                 EMAIL_CONFIG["MY_SMTP_USERNAME"],
-                                 EMAIL_CONFIG["MY_SMTP_PASSWORD"],
-                                 EMAIL_CONFIG["MY_EMAIL_ADDRESS"],
-                                 EMAIL_CONFIG["STUDENT_MAIL_DOMAIN"],
-                                 EMAIL_CONFIG["EMAIL_SUBJECT"],
-                                 EMAIL_CONFIG["CC_ADDRESS"])
+        # EMAIL_CONFIG["MY_SMTP_SERVER"] = smtp_server
+        log = applyFuncDirectory(emailFeedback, student_dir, assign_name, nb_name, None)
         # smtp_server.quit()
         header = [["Student ID", "Email Sent"]]
         writeCsv(os.path.join(COURSE_DIR, "reports", assign_name, "email-" + nb_name + "-" + datetime.datetime.now().strftime("%m-%d-%H-%M") + ".csv"), header + log)
