@@ -44,7 +44,9 @@ optional arguments:
                         matches based on grade_id
   --select StudentID [StudentID ...]
                         Select specific students to fix their notebooks
-                        without having to run on the entire class
+                        without having to run on the entire class (WARNING:
+                        moves student(s) to <course_dir>/nbhelper-select-tmp
+                        then moves back unless an error was encountered)
   --info AssignName     Get some quick info (student id, file size, cell
                         count, total execution count, [grade id : execution
                         count]) of all submissions and writes to

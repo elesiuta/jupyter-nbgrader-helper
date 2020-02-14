@@ -46,7 +46,7 @@ import typing
 
 ####### Config #######
 
-VERSION = "0.1.10"
+VERSION = "0.1.11"
 
 EMAIL_CONFIG = {
     "CC_ADDRESS": None, # "ccemail@domain.com" or SELF to cc MY_EMAIL_ADDRESS
@@ -640,8 +640,8 @@ def main():
                         help="Email feedback to students (see EMAIL_CONFIG in script, prompts for unset fields)")
     parser.add_argument("--ckdir", type=str, metavar=("AssignName", "NbName.extension"), nargs=2,
                         help="Check <course_dir>/feedback directory (change with --odir) by printing studentIDs and matching files to make sure it is structured properly")
-    parser.add_argument("--ckgrades", type=str, metavar="AssignName",
-                        help="Checks for consistency between 'nbgrader export', 'dist', and 'fdist', and writes grades to <course_dir>/reports/<AssignName>/grades-<NbName>.csv")
+    # parser.add_argument("--ckgrades", type=str, metavar="AssignName",
+    #                     help="Checks for consistency between 'nbgrader export', 'dist', and 'fdist', and writes grades to <course_dir>/reports/<AssignName>/grades-<NbName>.csv")
     parser.add_argument("--ckdup", type=str, metavar="NbName.extension", nargs="?",
                         help="Checks all submitted directories for NbName.extension and reports subfolders containing multiple files of the same extension")
     parser.add_argument("--chmod", type=str, metavar=("rwx", "AssignName"), nargs=2,
@@ -897,8 +897,8 @@ def main():
             writeCsv(os.path.join(COURSE_DIR, "reports", assign_name, "fdist-" + nb_name + ".csv"), data)
         print("Done")
 
-    if args.ckgrades is not None:
-        print("CKGRADES FUNCTION NOT IMPLIMENTED")
+    # if args.ckgrades is not None:
+    #     print("CKGRADES FUNCTION NOT IMPLIMENTED")
 
     if args.email is not None:
         assign_name, nb_name = args.email
