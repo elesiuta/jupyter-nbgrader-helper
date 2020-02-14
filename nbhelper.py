@@ -42,10 +42,11 @@ import mimetypes
 import zipfile
 import shutil
 import urllib.request
+import typing
 
 ####### Config #######
 
-VERSION = "0.1.7"
+VERSION = "0.1.8"
 
 EMAIL_CONFIG = {
     "CC_ADDRESS": None, # "ccemail@domain.com" or SELF to cc MY_EMAIL_ADDRESS
@@ -94,7 +95,7 @@ https://docs.python.org/3/library/codecs.html#error-handlers
 argparse does not escape spaces with '\\' in arguments, use \"double quotes\"
 
 --Dependencies--
-this script does not use any external libraries, however it depends on the JSON metadata format used by nbgrader https://nbgrader.readthedocs.io/en/stable/contributor_guide/metadata.html
+this script does not use any external libraries, however it depends on the JSON metadata format used by jupyter https://nbformat.readthedocs.io/en/latest/format_description.html and nbgrader https://nbgrader.readthedocs.io/en/stable/contributor_guide/metadata.html
 all functions work on the ipynb/html files directly, it never touches the nbgrader database (gradebook.db) or use the nbgrader api
 this allows for more flexibility to repair notebooks nbgrader does not know how to handle and provides robustness in the event of mismatched versions or weird configuration changes by others
 
@@ -302,6 +303,10 @@ def sortStudentGradeIds(student_dict, sorted_grade_id_list, grade_id_key = "grad
     for key in other_keys:
         new_student_dict[key] = student_dict[key]
     return new_student_dict
+
+def sortStudentCells():
+    # todo if wanting to read cells as strings in test cases via history becomes a problem
+    pass
 
 
 ####### Main functions #######
