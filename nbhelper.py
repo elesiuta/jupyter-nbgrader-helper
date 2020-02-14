@@ -45,7 +45,7 @@ import urllib.request
 
 ####### Config #######
 
-VERSION = "0.1.5"
+VERSION = "0.1.6"
 
 EMAIL_CONFIG = {
     "CC_ADDRESS": None, # "ccemail@domain.com" or SELF to cc MY_EMAIL_ADDRESS
@@ -884,6 +884,7 @@ def main():
         for key in EMAIL_CONFIG:
             if EMAIL_CONFIG[key] is None:
                 EMAIL_CONFIG[key] = input("Enter value for %s: " %(key))
+                # replace blank entries with None
                 if EMAIL_CONFIG[key].strip() == "":
                     EMAIL_CONFIG[key] = None
         if EMAIL_CONFIG["CC_ADDRESS"] == "SELF":
@@ -1020,6 +1021,16 @@ assert hash_fun(gcd(30, 42)) == 'e7f6c011776e8db7cd330b54174fd76f7d0216b612387a5
 # semi-hidden input, hidden output, chance of false positives
 inputs = [(x,y) for x in range(50) for y in range (50)]
 assert any([hash_fun(gcd(*x)) == 'e7f6c011776e8db7cd330b54174fd76f7d0216b612387a5ffcfb81e6f0919683' for x in inputs])
+
+##### Checking Implimentation #####
+
+https://nbgrader.readthedocs.io/en/stable/user_guide/autograding_resources.html#checking-whether-a-specific-function-has-been-used
+# read previous cell(s) as string by checking lists In or _ih, or using history magics
+# this is less reliable if the student overwrites those variables
+# or cells are out of order (might add a function that can check/fix that), nbgrader should only run student answer cells and test case cells
+%history -f history.txt
+with open("history.txt", "r") as f:  
+    history = f.read()
 
 '''
 
