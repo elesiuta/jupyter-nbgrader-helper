@@ -1003,13 +1003,15 @@ def main():
         grade_list = ["student_id", assign_name, "timestamp"]
         for student_id in grade_dict.keys():
             if (grade_dict[student_id]["raw_score"] != grade_dict[student_id]["dist_score"] or
-                grade_dict[student_id]["score"] != grade_dict[student_id]["fdist_score"]):
-                # I think raw_score is purely autograded and score reflects manual grading, but could be wrong
+                grade_dict[student_id]["score"] != grade_dict[student_id]["dist_score"]):
+                # I think raw_score is purely autograded and score reflects manual grading, but could be wrong and they both reflect manual
+                # used to check fdist_score here too but fdist is broken right now, html must have changed slightly and don't need it this semester so probably won't fix
+                # fdist was pretty hacky anyways
                 print(student_id + " grades don't match: " + str(grade_dict[student_id]))
                 grade_list.append([student_id, "ERROR", "ERROR"])
             else:
                 grade_list.append([student_id, grade_dict[student_id]["score"], grade_dict[student_id]["timestamp"]])
-        writeCsv(os.path.join(COURSE_DIR, "reports", assign_name, "ckdgrades.csv"), data)
+        writeCsv(os.path.join(COURSE_DIR, "reports", assign_name, "ckdgrades.csv"), grade_list)
 
     if args.email is not None:
         assign_name, nb_name = args.email
