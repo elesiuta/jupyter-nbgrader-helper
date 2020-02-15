@@ -47,7 +47,7 @@ import glob
 
 ####### Config #######
 
-VERSION = "0.1.13"
+VERSION = "0.1.14"
 
 EMAIL_CONFIG = {
     "CC_ADDRESS": None, # "ccemail@domain.com" or SELF to cc MY_EMAIL_ADDRESS
@@ -985,8 +985,8 @@ def main():
                 student_id = row[3]
                 grade_dict[student_id] = {
                     "timestamp": row[2],
-                    "raw_score": int(row[7]),
-                    "score": int(row[9]),
+                    "raw_score": float(row[7]),
+                    "score": float(row[9]),
                     "dist_score": 0,
                     "fdist_score": 0
                 }
