@@ -44,10 +44,11 @@ import shutil
 import urllib.request
 import typing
 import glob
+import re
 
 ####### Config #######
 
-VERSION = "0.1.20"
+VERSION = "0.1.21"
 
 EMAIL_CONFIG = {
     "CC_ADDRESS": None, # "ccemail@domain.com" or SELF to cc MY_EMAIL_ADDRESS
@@ -638,18 +639,23 @@ def getFeedbackScore(fullPath: str, studentID: str) -> dict:
     score_totals = []
     grade_id_list = []
     for line in source_html:
-        try:
-            if "Test cell</a> (Score" in line:
-                space_split = line.split(" ")
-                score_list.append(float(space_split[-3]))
-                score_totals.append(float(space_split[-1].split(")")[0]))
-                quote_split = line.split("\"")
-                grade_id_list.append(quote_split[1][1:])
-            elif " (Score: " in line:
-                line = line.split(" ")
-                total_score = float(line[line.index("(Score:")+1])
-        except:
-            print("Error for student: %s on line: %s" %(studentID, str(line)))
+        match = re.search(r'<li><a href="#(.+?)">Test cell</a> ?\(Score: ?(\d+\.\d+) ?/ ?(\d+\.\d+)\)</li>', line)
+        if match:
+            grade_id_list.append(match.groups()[0])
+            score_list.append(match.groups()[1])
+            score_totals.append(match.groups()[2])
+        # try:
+        #     if "Test cell</a> (Score" in line:
+        #         space_split = line.split(" ")
+        #         score_list.append(float(space_split[-3]))
+        #         score_totals.append(float(space_split[-1].split(")")[0]))
+        #         quote_split = line.split("\"")
+        #         grade_id_list.append(quote_split[1][1:])
+        elif " (Score: " in line:
+            line = line.split(" ")
+            total_score = float(line[line.index("(Score:")+1])
+        # except:
+        #     print("Error for student: %s on line: %s" %(studentID, str(line)))
     return {"student_id": studentID, "total_score": total_score, "score_list": score_list, "score_totals": score_totals, "grade_id_list": grade_id_list}
 
 def emailFeedback(feedback_html_path: str, student_email_id: str) -> list:
@@ -995,7 +1001,7 @@ def main():
                 cellnum = "{:<5}".format(str(i+1))
                 gp = "{:<4}".format(str(grade_points[i]))
                 gd = "{:<4}".format(str(grade_dist[i]))
-                ad = "{:<4}".format(str(grade_dist[i]/len(grades)))
+                _ad = "{:<4}".format(str(grade_dist[i]/len(grades)))
                 print("Test Cell: %s Points: %s Total points: %s" %(cellnum, gp, gd))
             print("")
             writeCsv(os.path.join(COURSE_DIR, "reports", assign_name, "fdist-" + nb_name + ".csv"), data)
