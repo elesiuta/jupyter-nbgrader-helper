@@ -47,7 +47,7 @@ import glob
 
 ####### Config #######
 
-VERSION = "0.1.18"
+VERSION = "0.1.19"
 
 EMAIL_CONFIG = {
     "CC_ADDRESS": None, # "ccemail@domain.com" or SELF to cc MY_EMAIL_ADDRESS
@@ -63,12 +63,18 @@ EMAIL_CONFIG = {
 }
 
 NB_HELP = """
+REMEMBER TO BACKUP THE SUBMITTED NOTEBOOKS REGULARLY
+most of the course can be regenerated from these along with your source notebooks
+plus other things could go wrong, you may also want to backup gradebook.db to save any manual grading (I think it's saved here, this script never touches it)
+this script is designed to be as nondestructive as possible, but some of the functions do make irreversible changes (hopefully for the better!)
+the only destructive edits this script does is on the submitted notebooks, unless you override the default with the wrong directory, use a non standard structure, or something terribly wrong happens
+
 --Quick reference for nbgrader usage--
 # https://xkcd.com/293/
 https://nbgrader.readthedocs.io/en/stable/user_guide/philosophy.html
 https://nbgrader.readthedocs.io/en/stable/user_guide/creating_and_grading_assignments.html
 https://nbgrader.readthedocs.io/en/stable/command_line_tools/index.html
-# summary of steps for those who are truly lazy
+# summary of steps
 0.a) make sure the nbgrader toolbar and formgrader extensions are enabled (most actions can be performed from here)
 0.b) otherwise, run all commands from the "course_directory"
 1.a) create the assignment using formgrader
@@ -706,6 +712,8 @@ def main():
               "<course_dir>/<nbgrader_step>/[<student_id>/]<AssignName>/<NbName>.<ipynb|html> "
               "where nbgrader_step = source|release|submitted|autograded|feedback")
     parser = argparse.ArgumentParser(description=readme)
+    parser.add_argument("--nbhelp", action="store_true",
+                        help="READ THIS FIRST")
     parser.add_argument("--cdir", type=str, metavar="path", default=os.getcwd(), dest="cdir",
                         help="Override path to course_dir (default: current directory)")
     parser.add_argument("--sdir", type=str, metavar="path", default=None, dest="sdir",
@@ -746,8 +754,6 @@ def main():
                         help="Same as zip but matches files instead of assignment folders")
     parser.add_argument("--backup", type=str, metavar="nbgrader_step", choices=["autograded","feedback","release","source","submitted"],
                         help="Backup nbgrader_step directory to <course_dir>/backups/<nbgrader_step-mm-dd-hh-mm>.zip")
-    parser.add_argument("--nbhelp", action="store_true",
-                        help="Print quick reference for nbgrader and some extra helpful tips/fixes")
     args = parser.parse_args()
 
     SCRIPT_DIR = os.getcwd()
