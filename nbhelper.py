@@ -1027,6 +1027,7 @@ def main():
             else:
                 grade_list.append([student_id, grade_dict[student_id]["score"], grade_dict[student_id]["timestamp"]])
         writeCsv(os.path.join(COURSE_DIR, "reports", assign_name, "ckdgrades.csv"), grade_list)
+        print("Done")
 
     if args.email is not None:
         assign_name, nb_name = args.email
