@@ -994,12 +994,12 @@ def main():
             nb = readCsv(nb)
             points = nb[2]
             for row in nb[3:]:
-                grade_dict[row[0]]["dist_score"] = sum([i * j for i, j in zip(points[1:], row[1:])])
+                grade_dict[row[0]]["dist_score"] = sum([float(i) * float(j) for i, j in zip(points[1:], row[1:])])
         for nb in glob.glob(os.path.join(COURSE_DIR, "reports", assign_name, "fdist-*.csv")):
             nb = readCsv(nb)
             points = nb[2]
             for row in nb[3:]:
-                grade_dict[row[0]]["fdist_score"] = sum([i * j for i, j in zip(points[1:], row[1:])])
+                grade_dict[row[0]]["fdist_score"] = sum([float(i) * float(j) for i, j in zip(points[1:], row[1:])])
         grade_list = ["student_id", assign_name, "timestamp"]
         for student_id in grade_dict.keys():
             if (grade_dict[student_id]["raw_score"] != grade_dict[student_id]["dist"] or
