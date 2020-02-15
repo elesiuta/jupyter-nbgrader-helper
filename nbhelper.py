@@ -47,7 +47,7 @@ import glob
 
 ####### Config #######
 
-VERSION = "0.1.15"
+VERSION = "0.1.16"
 
 EMAIL_CONFIG = {
     "CC_ADDRESS": None, # "ccemail@domain.com" or SELF to cc MY_EMAIL_ADDRESS
@@ -595,7 +595,13 @@ def getAutogradedScore(fullPath: str, studentID: str) -> dict:
     for cell in source_json["cells"]:
         try:
             if cell["metadata"]["nbgrader"]["points"] >= 0:
-                if cell["outputs"] == []:
+                if (cell["outputs"] == [] or
+                        (len(cell["outputs"]) == 1 and
+                         "ename" not in cell["outputs"][0] and
+                         "evalue" not in cell["outputs"][0] and
+                         "traceback" not in cell["outputs"][0] and
+                         "output_type" in cell["outputs"][0] and
+                         cell["outputs"][0]["output_type"] != "error")):
                     pass_list.append(1)
                     error_list.append("No Error (passed test)")
                 else:
@@ -603,7 +609,8 @@ def getAutogradedScore(fullPath: str, studentID: str) -> dict:
                     if "ename" in cell["outputs"][0]:
                         error_list.append(cell["outputs"][0]["ename"])
                     else:
-                        error_list.append("Other Error (failed test)")
+                        error_list.append("Other Error (checks outputs)")
+                        print("Unexpected cell['outputs']: " + str(cell["outputs"]))
                 points_list.append(cell["metadata"]["nbgrader"]["points"])
                 grade_id_list.append(cell["metadata"]["nbgrader"]["grade_id"])
         except:
