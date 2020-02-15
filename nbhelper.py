@@ -47,7 +47,7 @@ import glob
 
 ####### Config #######
 
-VERSION = "0.1.12"
+VERSION = "0.1.13"
 
 EMAIL_CONFIG = {
     "CC_ADDRESS": None, # "ccemail@domain.com" or SELF to cc MY_EMAIL_ADDRESS
@@ -197,7 +197,7 @@ def sendEmail(smtp_server: typing.Union[str, smtplib.SMTP],
 
 ####### Functions for applying functions #######
 
-def applyTemplateSubmissions(func, template_path, submit_dir, file_name, assignment_name = None, delete = "n"):
+def applyTemplateSubmissions(func, template_path: str, submit_dir: str, file_name: str, assignment_name = None, delete = "n") -> None:
     template = readJson(template_path)
     if os.path.isdir(submit_dir):
         for dirName, subdirList, fileList in os.walk(submit_dir):
@@ -214,7 +214,7 @@ def applyTemplateSubmissions(func, template_path, submit_dir, file_name, assignm
                 elif delete.lower() == "y":
                     os.remove(fullPath)
 
-def applyFuncFiles(func, directory, file_name, *args):
+def applyFuncFiles(func, directory: str, file_name: str, *args) -> list:
     output = []
     if os.path.isdir(directory):
         for dirName, subdirList, fileList in os.walk(directory):
@@ -226,7 +226,7 @@ def applyFuncFiles(func, directory, file_name, *args):
                     output.append(func(fullPath, studentID, *args))
     return output
 
-def applyFuncDirectory(func, directory, assignment_name, file_name, file_extension, *args, **kwargs):
+def applyFuncDirectory(func, directory: str, assignment_name: str, file_name: typing.Union[str, None], file_extension: typing.Union[str, None], *args, **kwargs) -> list:
     output = []
     if os.path.isdir(directory):
         for dirName, subdirList, fileList in os.walk(directory):
@@ -244,7 +244,7 @@ def applyFuncDirectory(func, directory, assignment_name, file_name, file_extensi
 
 ####### Helper functions #######
 
-def getFunctionNames(source):
+def getFunctionNames(source: list) -> list:
     function_names = []
     for line in source:
         if "def " in line:
@@ -254,13 +254,13 @@ def getFunctionNames(source):
             function_names.append(function_name)
     return function_names
 
-def returnPath(fullPath, studentID):
+def returnPath(fullPath: str, studentID: str) -> dict:
     return {"student_id": studentID, "path": fullPath}
 
-def printFileNames(fullPath, studentID):
+def printFileNames(fullPath: str, studentID: str) -> None:
     print("%s - %s" %(studentID, os.path.basename(fullPath)))
 
-def getAnswerCells(fullPath, studentID):
+def getAnswerCells(fullPath: str, studentID: str) -> dict:
     source_json = readJson(fullPath)
     output_string_list = []
     for cell in source_json["cells"]:
@@ -271,7 +271,7 @@ def getAnswerCells(fullPath, studentID):
             pass
     return {"student_id": studentID, "answers": output_string_list}
 
-def concatNotebookAnswerCells(list_of_list_of_answer_dicts):
+def concatNotebookAnswerCells(list_of_list_of_answer_dicts) -> dict:
     answer_dict = {}
     for notebook_list in list_of_list_of_answer_dicts:
         for student_notebook in notebook_list:
@@ -288,7 +288,7 @@ def writeAnswerCells(answer_dict, codeDir):
         with open(codePath, "w", encoding="utf8", errors="backslashreplace") as f:
             f.writelines(answer_dict[student_id])
 
-def getStudentFileDir(course_dir, odir, nbgrader_step):
+def getStudentFileDir(course_dir: str, odir: str, nbgrader_step: str) -> str:
     if odir is None:
         student_dir = os.path.join(course_dir, nbgrader_step)
     else:
@@ -316,21 +316,89 @@ def sortStudentGradeIds(student_dict, sorted_grade_id_list, grade_id_key = "grad
         new_student_dict[key] = student_dict[key]
     return new_student_dict
 
-def sortStudentCells():
-    # todo if wanting to read cells as strings in test cases via history becomes a problem
-    pass
+def sortStudentCells(template: dict, student: dict, student_id: str = "") -> typing.Union[dict, None]:
+    # get template grade_id order
+    template_grade_ids = []
+    for cell in template["cells"]:
+        try:
+            grade_id = cell["metadata"]["nbgrader"]["grade_id"]
+            template_grade_ids.append(grade_id)
+        except:
+            pass
+    # get student grade_id order
+    student_grade_ids = []
+    for cell in student["cells"]:
+        try:
+            grade_id = cell["metadata"]["nbgrader"]["grade_id"]
+            student_grade_ids.append(grade_id)
+        except:
+            pass
+    # are changes necessary?
+    if template_grade_ids == student_grade_ids:
+        print("No changes made for:     " + student_id)
+        return None
+    else:
+        new_student_cells = []
+        # re-add all non id cells to top
+        for cell in student["cells"]:
+            try:
+                _ = cell["metadata"]["nbgrader"]["grade_id"]
+            except:
+                new_student_cells.append(cell)
+        # add all grade_id cells in order
+        for grade_id in template_grade_ids:
+            found_student_cell = False
+            for cell in student["cells"]:
+                try:
+                    if cell["metadata"]["nbgrader"]["grade_id"] == grade_id:
+                        found_student_cell = True
+                        new_student_cells.append(cell)
+                except:
+                    pass
+            if not found_student_cell:
+                print("Student: %s is missing test cell: %s" %(student_id, grade_id))
+        # return updated notebook (probably still the same object but who cares)
+        print("Updated cell order for:  " + student_id)
+        student["cells"] = new_student_cells
+        return student
 
-def removeNonEssentialCells():
-    pass
+def removeNonEssentialCells(template: dict, student: dict, student_id: str = "") -> typing.Union[dict, None]:
+    # get template grade_ids
+    template_grade_ids = []
+    for cell in template["cells"]:
+        try:
+            grade_id = cell["metadata"]["nbgrader"]["grade_id"]
+            template_grade_ids.append(grade_id)
+        except:
+            pass
+    # start fresh, always modifies the notebook cells
+    new_student_cells = []
+    # add all grade_id cells in order
+    for grade_id in template_grade_ids:
+        found_student_cell = False
+        for cell in student["cells"]:
+            try:
+                if cell["metadata"]["nbgrader"]["grade_id"] == grade_id:
+                    found_student_cell = True
+                    new_student_cells.append(cell)
+                    break
+            except:
+                pass
+        if not found_student_cell:
+            print("Student: %s is missing test cell: %s" %(student_id, grade_id))
+    # return updated notebook (probably still the same object but who cares)
+    print("Updated notebook for:  " + student_id)
+    student["cells"] = new_student_cells
+    return student
 
 
 ####### Main functions #######
 
-def addNbgraderCell(nbgrader, student, student_id = ""):
+def addNbgraderCell(template: dict, student: dict, student_id: str = "") -> typing.Union[dict, None]:
     last_answer_cell_index = 0
     found_student_cell = False
     modified = False
-    for cell in nbgrader["cells"]:
+    for cell in template["cells"]:
         try:
             # answer cell
             if cell["metadata"]["nbgrader"]["locked"] == False:
@@ -392,7 +460,7 @@ def addNbgraderCell(nbgrader, student, student_id = ""):
         print("No changes made for:  " + student_id)
         return None
 
-def updateTestCells(template, student, student_id = ""):
+def updateTestCells(template: dict, student: dict, student_id: str = "") -> typing.Union[dict, None]:
     modified = False
     # update points in test cases
     for cell in template["cells"]:
@@ -459,7 +527,7 @@ def updateTestCells(template, student, student_id = ""):
         print("No changes made for:     " + student_id)
         return None
 
-def updateCellsMeta(template, student, student_id = ""):
+def updateCellsMeta(template: dict, student: dict, student_id: str = "") -> typing.Union[dict, None]:
     modified = False
     # update points in test cases
     for cell in template["cells"]:
@@ -496,7 +564,7 @@ def updateCellsMeta(template, student, student_id = ""):
         print("No changes made for:     " + student_id)
         return None
 
-def quickInfo(fullPath, studentID):
+def quickInfo(fullPath: str, studentID: str):
     studentNB = readJson(fullPath)
     studentSize = os.path.getsize(fullPath)
     studentCells = len(studentNB["cells"])
@@ -508,7 +576,7 @@ def quickInfo(fullPath, studentID):
                 execution_by_id.append(str(cell["metadata"]["nbgrader"]["grade_id"]) + " : " + str(cell["execution_count"]))
     return [studentID, studentSize, studentCells, execution_count] + execution_by_id
 
-def checkDuplicates(fullPath, studentID):
+def checkDuplicates(fullPath: str, studentID: str):
     fDir, fName = os.path.split(fullPath)
     ext = fName.split(".")[-1]
     dupfiles = [f for f in os.listdir(fDir) if f.split(".")[-1] == ext]
@@ -518,7 +586,7 @@ def checkDuplicates(fullPath, studentID):
     else:
         print("%s - %s" %(studentID, fName))
 
-def getAutogradedScore(fullPath, studentID):
+def getAutogradedScore(fullPath: str, studentID: str) -> dict:
     source_json = readJson(fullPath)
     pass_list = []
     points_list = []
@@ -542,7 +610,7 @@ def getAutogradedScore(fullPath, studentID):
             pass
     return {"student_id": studentID, "pass_list": pass_list, "points_list": points_list, "error_list": error_list, "grade_id_list": grade_id_list}
 
-def getFeedbackScore(fullPath, studentID):
+def getFeedbackScore(fullPath: str, studentID: str) -> dict:
     with open(fullPath, 'r', errors='ignore') as f:
         source_html = f.readlines()
     score_list = []
@@ -563,7 +631,7 @@ def getFeedbackScore(fullPath, studentID):
             print("Error for student: %s on line: %s" %(studentID, str(line)))
     return {"student_id": studentID, "total_score": total_score, "score_list": score_list, "score_totals": score_totals, "grade_id_list": grade_id_list}
 
-def emailFeedback(feedback_html_path, student_email_id):
+def emailFeedback(feedback_html_path: str, student_email_id: str) -> list:
     if EMAIL_CONFIG["EMAIL_HTML"] == "FEEDBACK":
         with open(feedback_html_path, "r", encoding="utf8", errors="replace") as f:
             email_html = f.read()
@@ -588,7 +656,7 @@ def emailFeedback(feedback_html_path, student_email_id):
     else:
         return [student_email_id, "0"]
 
-def zipFeedback(student_dir, data):
+def zipFeedback(student_dir: str, data: list) -> None:
     # convert to dict
     studentDict = {}
     for sub_list in data:
@@ -604,7 +672,7 @@ def zipFeedback(student_dir, data):
             for f in studentDict[studentID]:
                 z.write(f, os.path.basename(f))
 
-def chmod(fullPath, studentID, permission):
+def chmod(fullPath: str, studentID: str, permission: str) -> None:
     octal = eval("0o" + permission)
     os.chmod(fullPath, octal)
     new_permission = str(oct(os.stat(fullPath).st_mode))
