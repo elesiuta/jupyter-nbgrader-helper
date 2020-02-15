@@ -47,7 +47,7 @@ import glob
 
 ####### Config #######
 
-VERSION = "0.1.17"
+VERSION = "0.1.18"
 
 EMAIL_CONFIG = {
     "CC_ADDRESS": None, # "ccemail@domain.com" or SELF to cc MY_EMAIL_ADDRESS
@@ -596,12 +596,16 @@ def getAutogradedScore(fullPath: str, studentID: str) -> dict:
         try:
             if cell["metadata"]["nbgrader"]["points"] >= 0:
                 if (cell["outputs"] == [] or
-                        (len(cell["outputs"]) == 1 and
-                         "ename" not in cell["outputs"][0] and
-                         "evalue" not in cell["outputs"][0] and
-                         "traceback" not in cell["outputs"][0] and
-                         "output_type" in cell["outputs"][0] and
-                         cell["outputs"][0]["output_type"] != "error")):
+                        (len(cell["outputs"]) >= 1 and
+                         all([("ename" not in cell_output and
+                               "evalue" not in cell_output and
+                               "traceback" not in cell_output and
+                               "output_type" in cell_output and
+                               cell_output["output_type"] != "error")
+                              for cell_output in cell["outputs"]]
+                             )
+                         )
+                    ):
                     pass_list.append(1)
                     error_list.append("No Error (passed test)")
                 else:
