@@ -1002,8 +1002,8 @@ def main():
                 grade_dict[row[0]]["fdist_score"] = sum([float(i) * float(j) for i, j in zip(points[1:], row[1:])])
         grade_list = ["student_id", assign_name, "timestamp"]
         for student_id in grade_dict.keys():
-            if (grade_dict[student_id]["raw_score"] != grade_dict[student_id]["dist"] or
-                grade_dict[student_id]["score"] != grade_dict[student_id]["fdist"]):
+            if (grade_dict[student_id]["raw_score"] != grade_dict[student_id]["dist_score"] or
+                grade_dict[student_id]["score"] != grade_dict[student_id]["fdist_score"]):
                 # I think raw_score is purely autograded and score reflects manual grading, but could be wrong
                 print(student_id + " grades don't match: " + str(grade_dict[student_id]))
                 grade_list.append([student_id, "ERROR", "ERROR"])
