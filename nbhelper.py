@@ -47,7 +47,7 @@ import glob
 
 ####### Config #######
 
-VERSION = "0.1.16"
+VERSION = "0.1.17"
 
 EMAIL_CONFIG = {
     "CC_ADDRESS": None, # "ccemail@domain.com" or SELF to cc MY_EMAIL_ADDRESS
@@ -606,10 +606,14 @@ def getAutogradedScore(fullPath: str, studentID: str) -> dict:
                     error_list.append("No Error (passed test)")
                 else:
                     pass_list.append(0)
-                    if "ename" in cell["outputs"][0]:
-                        error_list.append(cell["outputs"][0]["ename"])
-                    else:
-                        error_list.append("Other Error (checks outputs)")
+                    found_error = False
+                    for cell_output in cell["outputs"]:
+                        if "ename" in cell_output:
+                            error_list.append(cell_output["ename"])
+                            found_error = True
+                            break
+                    if found_error == False:
+                        error_list.append("Unknown Error (check outputs)")
                         print("Unexpected cell['outputs']: " + str(cell["outputs"]))
                 points_list.append(cell["metadata"]["nbgrader"]["points"])
                 grade_id_list.append(cell["metadata"]["nbgrader"]["grade_id"])
