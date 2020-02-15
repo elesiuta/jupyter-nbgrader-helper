@@ -43,10 +43,11 @@ import zipfile
 import shutil
 import urllib.request
 import typing
+import glob
 
 ####### Config #######
 
-VERSION = "0.1.11"
+VERSION = "0.1.12"
 
 EMAIL_CONFIG = {
     "CC_ADDRESS": None, # "ccemail@domain.com" or SELF to cc MY_EMAIL_ADDRESS
@@ -113,14 +114,14 @@ https://github.com/elesiuta/jupyter-nbgrader-helper
 
 ####### Generic functions #######
 
-def writeCsv(fName, data, enc = None, delimiter = ","):
+def writeCsv(fName: str, data: list, enc = None, delimiter = ",") -> None:
     os.makedirs(os.path.dirname(fName), exist_ok=True)
     with open(fName, "w", newline="", encoding=enc, errors="backslashreplace") as f:
         writer = csv.writer(f, delimiter=delimiter)
         for row in data:
             writer.writerow(row)
 
-def readCsv(fName, delimiter = ","):
+def readCsv(fName: str, delimiter = ",") -> list:
     data = []
     with open(fName, "r", newline="") as f:
         reader = csv.reader(f, delimiter=delimiter)
@@ -128,16 +129,23 @@ def readCsv(fName, delimiter = ","):
             data.append(row)
     return data
 
-def readJson(fname):
+def readJson(fname: str) -> dict:
     with open(fname, "r", errors="ignore") as json_file:  
         data = json.load(json_file)
     return data
 
-def writeJson(fname, data):
+def writeJson(fname: str, data: dict) -> None:
     with open(fname, "w", errors="ignore") as json_file:  
         json.dump(data, json_file, indent=1, separators=(',', ': '))
 
-def sendEmail(smtp_server, smtp_user, smtp_pwd, sender, recipient, subject, cc = None, body = None, html = None, attachment_path = None):
+def sendEmail(smtp_server: typing.Union[str, smtplib.SMTP],
+              smtp_user: str, smtp_pwd: str,
+              sender: str, recipient: str,
+              subject: str, 
+              cc: typing.Union[str, None] = None,
+              body: typing.Union[str, None] = None,
+              html: typing.Union[str, None] = None,
+              attachment_path: typing.Union[str, None] = None):
     message = email.message.EmailMessage()
     message["From"] = sender
     message["To"] = recipient
@@ -310,6 +318,9 @@ def sortStudentGradeIds(student_dict, sorted_grade_id_list, grade_id_key = "grad
 
 def sortStudentCells():
     # todo if wanting to read cells as strings in test cases via history becomes a problem
+    pass
+
+def removeNonEssentialCells():
     pass
 
 
@@ -640,9 +651,9 @@ def main():
                         help="Email feedback to students (see EMAIL_CONFIG in script, prompts for unset fields)")
     parser.add_argument("--ckdir", type=str, metavar=("AssignName", "NbName.extension"), nargs=2,
                         help="Check <course_dir>/feedback directory (change with --odir) by printing studentIDs and matching files to make sure it is structured properly")
-    # parser.add_argument("--ckgrades", type=str, metavar="AssignName",
-    #                     help="Checks for consistency between 'nbgrader export', 'dist', and 'fdist', and writes grades to <course_dir>/reports/<AssignName>/grades-<NbName>.csv")
-    parser.add_argument("--ckdup", type=str, metavar="NbName.extension", nargs="?",
+    parser.add_argument("--ckgrades", type=str, metavar="AssignName",
+                        help="Checks for consistency between 'nbgrader export', 'dist', and 'fdist', and writes grades to <course_dir>/reports/<AssignName>/grades-<NbName>.csv")
+    parser.add_argument("--ckdup", type=str, metavar="NbName.extension",
                         help="Checks all submitted directories for NbName.extension and reports subfolders containing multiple files of the same extension")
     parser.add_argument("--chmod", type=str, metavar=("rwx", "AssignName"), nargs=2,
                         help="Run chmod rwx on all submissions for an assignment (linux only)")
@@ -897,8 +908,40 @@ def main():
             writeCsv(os.path.join(COURSE_DIR, "reports", assign_name, "fdist-" + nb_name + ".csv"), data)
         print("Done")
 
-    # if args.ckgrades is not None:
-    #     print("CKGRADES FUNCTION NOT IMPLIMENTED")
+    if args.ckgrades is not None:
+        assign_name = args.ckgrades
+        grade_dict = {}
+        nbgrader_grades = readCsv(os.path.join(COURSE_DIR, "grades.csv"))
+        for row in nbgrader_grades:
+            if row[0] == assign_name:
+                student_id = row[3]
+                grade_dict[student_id] = {
+                    "timestamp": row[2],
+                    "raw_score": int(row[7]),
+                    "score": int(row[9]),
+                    "dist_score": 0,
+                    "fdist_score": 0
+                }
+        for nb in glob.glob(os.path.join(COURSE_DIR, "reports", assign_name, "dist-*.csv")):
+            nb = readCsv(nb)
+            points = nb[2]
+            for row in nb[3:]:
+                grade_dict[row[0]]["dist_score"] = sum([i * j for i, j in zip(points[1:], row[1:])])
+        for nb in glob.glob(os.path.join(COURSE_DIR, "reports", assign_name, "fdist-*.csv")):
+            nb = readCsv(nb)
+            points = nb[2]
+            for row in nb[3:]:
+                grade_dict[row[0]]["fdist_score"] = sum([i * j for i, j in zip(points[1:], row[1:])])
+        grade_list = ["student_id", assign_name, "timestamp"]
+        for student_id in grade_dict.keys():
+            if (grade_dict[student_id]["raw_score"] != grade_dict[student_id]["dist"] or
+                grade_dict[student_id]["score"] != grade_dict[student_id]["fdist"]):
+                # I think raw_score is purely autograded and score reflects manual grading, but could be wrong
+                print(student_id + " grades don't match: " + str(grade_dict[student_id]))
+                grade_list.append([student_id, "ERROR", "ERROR"])
+            else:
+                grade_list.append([student_id, grade_dict[student_id]["score"], grade_dict[student_id]["timestamp"]])
+        writeCsv(os.path.join(COURSE_DIR, "reports", assign_name, "ckdgrades.csv"), data)
 
     if args.email is not None:
         assign_name, nb_name = args.email
