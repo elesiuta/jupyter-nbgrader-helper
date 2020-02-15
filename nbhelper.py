@@ -47,7 +47,7 @@ import glob
 
 ####### Config #######
 
-VERSION = "0.1.19"
+VERSION = "0.1.20"
 
 EMAIL_CONFIG = {
     "CC_ADDRESS": None, # "ccemail@domain.com" or SELF to cc MY_EMAIL_ADDRESS
@@ -66,8 +66,7 @@ NB_HELP = """
 REMEMBER TO BACKUP THE SUBMITTED NOTEBOOKS REGULARLY
 most of the course can be regenerated from these along with your source notebooks
 plus other things could go wrong, you may also want to backup gradebook.db to save any manual grading (I think it's saved here, this script never touches it)
-this script is designed to be as nondestructive as possible, but some of the functions do make irreversible changes (hopefully for the better!)
-the only destructive edits this script does is on the submitted notebooks, unless you override the default with the wrong directory, use a non standard structure, or something terribly wrong happens
+this script is designed to be as nondestructive as possible, most functions just read course files but some do make modifications to the submitted notebooks, trying for minimal modifications and only when necessary
 
 --Quick reference for nbgrader usage--
 # https://xkcd.com/293/
@@ -115,6 +114,7 @@ there are some useful templates at the bottom of this script
 
 --Version %s--
 https://github.com/elesiuta/jupyter-nbgrader-helper
+this software is licensed under the BSD 3-Clause License
 """ %(VERSION)
 
 
@@ -322,6 +322,9 @@ def sortStudentGradeIds(student_dict, sorted_grade_id_list, grade_id_key = "grad
         new_student_dict[key] = student_dict[key]
     return new_student_dict
 
+
+####### Main functions #######
+
 def sortStudentCells(template: dict, student: dict, student_id: str = "") -> typing.Union[dict, None]:
     # get template grade_id order
     template_grade_ids = []
@@ -345,12 +348,6 @@ def sortStudentCells(template: dict, student: dict, student_id: str = "") -> typ
         return None
     else:
         new_student_cells = []
-        # re-add all non id cells to top
-        for cell in student["cells"]:
-            try:
-                _ = cell["metadata"]["nbgrader"]["grade_id"]
-            except:
-                new_student_cells.append(cell)
         # add all grade_id cells in order
         for grade_id in template_grade_ids:
             found_student_cell = False
@@ -363,6 +360,12 @@ def sortStudentCells(template: dict, student: dict, student_id: str = "") -> typ
                     pass
             if not found_student_cell:
                 print("Student: %s is missing test cell: %s" %(student_id, grade_id))
+        # re-add all non id cells to bottom
+        for cell in student["cells"]:
+            try:
+                _ = cell["metadata"]["nbgrader"]["grade_id"]
+            except:
+                new_student_cells.append(cell)
         # return updated notebook (probably still the same object but who cares)
         print("Updated cell order for:  " + student_id)
         student["cells"] = new_student_cells
@@ -396,9 +399,6 @@ def removeNonEssentialCells(template: dict, student: dict, student_id: str = "")
     print("Updated notebook for:  " + student_id)
     student["cells"] = new_student_cells
     return student
-
-
-####### Main functions #######
 
 def addNbgraderCell(template: dict, student: dict, student_id: str = "") -> typing.Union[dict, None]:
     last_answer_cell_index = 0
@@ -726,6 +726,10 @@ def main():
                         help="Update test points by using the corresponding file in source as a template and matching the cell's grade_id, also combines duplicate grade_ids")
     parser.add_argument("--meta", type=str, metavar=("AssignName", "NbName.ipynb"), nargs=2,
                         help="Fix cell metadata by replacing with that of source, matches based on grade_id")
+    parser.add_argument("--sortcells", type=str, metavar=("AssignName", "NbName.ipynb"), nargs=2,
+                        help="Sort cells of student notebooks to match order of source, matches based on grade_id, non grade_id cells are placed at the end")
+    parser.add_argument("--rmcells", type=str, metavar=("AssignName", "NbName.ipynb"), nargs=2,
+                        help="MAKE SURE YOU BACKUP FIRST - Removes all student cells that do not have a grade_id that matches the source notebook (and sorts the ones that do) - this function is destructive and should be used as a last resort")
     parser.add_argument("--select", type=str, metavar="StudentID", nargs="+", default=None,
                         help="Select specific students to fix their notebooks without having to run on the entire class (WARNING: moves student(s) to <course_dir>/nbhelper-select-tmp then moves back unless an error was encountered)")
     parser.add_argument("--info", type=str, metavar="AssignName",

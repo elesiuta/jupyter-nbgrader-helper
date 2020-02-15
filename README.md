@@ -1,22 +1,25 @@
 # jupyter-nbgrader-helper
 
 ```
-usage: nbhelper.py [-h] [--cdir path] [--sdir path] [--odir path]
+usage: nbhelper.py [-h] [--nbhelp] 
+                   [--cdir path] [--sdir path] [--odir path]
                    [--add AssignName NbName.ipynb]
                    [--fix AssignName NbName.ipynb]
                    [--meta AssignName NbName.ipynb]
+                   [--sortcells AssignName NbName.ipynb]
+                   [--rmcells AssignName NbName.ipynb]
                    [--select StudentID [StudentID ...]]
                    [--info AssignName]
                    [--moss AssignName] [--getmoss]
                    [--dist AssignName] [--fdist AssignName]
                    [--email AssignName|zip NbName.html|feedback.zip]
                    [--ckdir AssignName NbName.extension]
-                   [--ckdup [NbName.extension]]
+                   [--ckgrades AssignName]
+                   [--ckdup NbName.extension]
                    [--chmod rwx AssignName]
                    [--zip AssignName [AssignName ...]]
                    [--zipfiles NbName.html [NbName.html ...]]
                    [--backup nbgrader_step]
-                   [--nbhelp]
 
 A collection of helpful functions for use with jupyter nbgrader. Designed to
 be placed in <course_dir>/nbhelper.py by default with the structure:
@@ -25,6 +28,7 @@ where nbgrader_step = source|release|submitted|autograded|feedback
 
 optional arguments:
   -h, --help            show this help message and exit
+  --nbhelp              READ THIS FIRST
   --cdir path           Override path to course_dir (default: current
                         directory)
   --sdir path           Override path to source directory
@@ -42,6 +46,15 @@ optional arguments:
   --meta AssignName NbName.ipynb
                         Fix cell metadata by replacing with that of source,
                         matches based on grade_id
+  --sortcells AssignName NbName.ipynb
+                        Sort cells of student notebooks to match order of
+                        source, matches based on grade_id, non grade_id cells
+                        are placed at the end
+  --rmcells AssignName NbName.ipynb
+                        MAKE SURE YOU BACKUP FIRST - Removes all student cells
+                        that do not have a grade_id that matches the source
+                        notebook (and sorts the ones that do) - this function
+                        is destructive and should be used as a last resort
   --select StudentID [StudentID ...]
                         Select specific students to fix their notebooks
                         without having to run on the entire class (WARNING:
@@ -69,7 +82,11 @@ optional arguments:
                         Check <course_dir>/feedback directory (change with
                         --odir) by printing studentIDs and matching files to
                         make sure it is structured properly
-  --ckdup [NbName.extension]
+  --ckgrades AssignName
+                        Checks for consistency between 'nbgrader export',
+                        'dist', and 'fdist', and writes grades to
+                        <course_dir>/reports/<AssignName>/grades-<NbName>.csv
+  --ckdup NbName.extension
                         Checks all submitted directories for NbName.extension
                         and reports subfolders containing multiple files of
                         the same extension
@@ -85,6 +102,4 @@ optional arguments:
   --backup nbgrader_step
                         Backup nbgrader_step directory to
                         <course_dir>/backups/<nbgrader_step-mm-dd-hh-mm>.zip
-  --nbhelp              Print quick reference for nbgrader and some extra
-                        helpful tips/fixes
  ```
