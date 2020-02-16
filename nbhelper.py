@@ -48,7 +48,7 @@ import re
 
 ####### Config #######
 
-VERSION = "0.1.22"
+VERSION = "0.1.23"
 
 EMAIL_CONFIG = {
     "CC_ADDRESS": None, # "ccemail@domain.com" or SELF to cc MY_EMAIL_ADDRESS
@@ -322,6 +322,12 @@ def sortStudentGradeIds(student_dict, sorted_grade_id_list, grade_id_key = "grad
     for key in other_keys:
         new_student_dict[key] = student_dict[key]
     return new_student_dict
+
+def list2dict(list_of_dicts: list, unique_key: str):
+    new_dict = {}
+    for d in list_of_dicts:
+        new_dict[d[unique_key]] = d
+    return new_dict
 
 
 ####### Main functions #######
@@ -713,6 +719,17 @@ def chmod(fullPath: str, studentID: str, permission: str) -> None:
         if new_permission[-len(permission):] != permission:
             print("Could not change permissions for %s: %s" %(studentID, fullPath))
 
+def readTimestamps(fullPath: str, studentID: str):
+    try:
+        with open(fullPath, 'r', errors='ignore') as f:
+            timestamp = f.read()
+        timestamp = re.search(r'([\d\-]+ ?[\d\.:]+)', timestamp)
+        timestamp = timestamp.groups()[0]
+    except:
+        print("Could not read timestamp for %s" %(studentID))
+        timestamp = "ERROR"
+    return {"student_id": studentID, "read_timestamp": timestamp}
+
 
 ####### Main #######
 
@@ -1013,6 +1030,9 @@ def main():
 
     if args.ckgrades is not None:
         assign_name = args.ckgrades
+        student_dir = getStudentFileDir(COURSE_DIR, args.odir, "submitted")
+        timestamps = applyFuncFiles(readTimestamps, student_dir, "timestamp.txt")
+        timestamps = list2dict(timestamps, "student_id")
         grade_dict = {}
         nbgrader_grades = readCsv(os.path.join(COURSE_DIR, "grades.csv"))
         for row in nbgrader_grades:
@@ -1034,13 +1054,18 @@ def main():
             nb = readCsv(nb)
             points = nb[2]
             for row in nb[3:]:
-                grade_dict[row[0]]["fdist_score"] = sum([float(i) * float(j) for i, j in zip(points[1:], row[1:])])
+                grade_dict[row[0]]["fdist_score"] = sum(row[1:])
         grade_list = [["student_id", assign_name, "timestamp"]]
         for student_id in grade_dict.keys():
             if (grade_dict[student_id]["raw_score"] != grade_dict[student_id]["dist_score"] or
                 grade_dict[student_id]["score"] != grade_dict[student_id]["fdist_score"]):
                 # I think raw_score is purely autograded and score reflects manual grading, but could be wrong and they both reflect manual
                 print(student_id + " grades don't match: " + str(grade_dict[student_id]))
+                grade_list.append([student_id, "ERROR", "ERROR"])
+            elif (grade_dict[student_id]["timestamp"] is not None and 
+                  len(grade_dict[student_id]["timestamp"]) > 0 and
+                  grade_dict[student_id]["timestamp"] != timestamps[student_id]["read_timestamp"]):
+                print(student_id + " timestamps don't match: " + str(grade_dict[student_id]))
                 grade_list.append([student_id, "ERROR", "ERROR"])
             else:
                 grade_list.append([student_id, grade_dict[student_id]["score"], grade_dict[student_id]["timestamp"]])
