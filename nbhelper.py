@@ -1068,7 +1068,7 @@ def main():
                 grade_list.append([student_id, "ERROR", "ERROR"])
             elif (grade_dict[student_id]["timestamp"] is not None and 
                   len(str(grade_dict[student_id]["timestamp"])) > 0 and
-                  str(grade_dict[student_id]["timestamp"]).strip() != str(grade_dict[student_id]["read_timestamp"])).strip():
+                  str(grade_dict[student_id]["timestamp"]).strip() != str(grade_dict[student_id]["read_timestamp"]).strip()):
                 print(student_id + " timestamps don't match: " + str(grade_dict[student_id]))
                 grade_list.append([student_id, "ERROR", "ERROR"])
             else:
