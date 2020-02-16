@@ -48,7 +48,7 @@ import re
 
 ####### Config #######
 
-VERSION = "0.1.24"
+VERSION = "0.1.25"
 
 EMAIL_CONFIG = {
     "CC_ADDRESS": None, # "ccemail@domain.com" or SELF to cc MY_EMAIL_ADDRESS
@@ -1031,8 +1031,6 @@ def main():
     if args.ckgrades is not None:
         assign_name = args.ckgrades
         student_dir = getStudentFileDir(COURSE_DIR, args.odir, "submitted")
-        timestamps = applyFuncFiles(readTimestamps, student_dir, "timestamp.txt")
-        timestamps = list2dict(timestamps, "student_id")
         grade_dict = {}
         nbgrader_grades = readCsv(os.path.join(COURSE_DIR, "grades.csv"))
         for row in nbgrader_grades:
@@ -1045,6 +1043,9 @@ def main():
                     "dist_score": 0,
                     "fdist_score": 0
                 }
+        timestamps = applyFuncFiles(readTimestamps, student_dir, "timestamp.txt")
+        for ts in timestamps:
+            grade_dict[ts["student_id"]]["read_timestamp"] = ts["read_timestamp"]
         for nb in glob.glob(os.path.join(COURSE_DIR, "reports", assign_name, "dist-*.csv")):
             nb = readCsv(nb)
             points = nb[2]
@@ -1063,8 +1064,8 @@ def main():
                 print(student_id + " grades don't match: " + str(grade_dict[student_id]))
                 grade_list.append([student_id, "ERROR", "ERROR"])
             elif (grade_dict[student_id]["timestamp"] is not None and 
-                  len(grade_dict[student_id]["timestamp"]) > 0 and
-                  grade_dict[student_id]["timestamp"] != timestamps[student_id]["read_timestamp"]):
+                  len(str(grade_dict[student_id]["timestamp"])) > 0 and
+                  str(grade_dict[student_id]["timestamp"]).strip() != str(grade_dict[student_id]["read_timestamp"])).strip():
                 print(student_id + " timestamps don't match: " + str(grade_dict[student_id]))
                 grade_list.append([student_id, "ERROR", "ERROR"])
             else:
