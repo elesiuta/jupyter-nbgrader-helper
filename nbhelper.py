@@ -48,7 +48,7 @@ import re
 
 ####### Config #######
 
-VERSION = "0.1.26"
+VERSION = "0.1.27"
 
 EMAIL_CONFIG = {
     "CC_ADDRESS": None, # "ccemail@domain.com" or SELF to cc MY_EMAIL_ADDRESS
@@ -855,6 +855,28 @@ def main():
         # else:
         #     delete = "n"
         applyTemplateSubmissions(updateCellsMeta, template_path, student_dir, nb_name, assign_name, delete="n")
+        print("Done")
+
+    if args.sortcells is not None:
+        assign_name, nb_name = args.sortcells
+        template_path = os.path.join(SOURCE_DIR, assign_name, nb_name)
+        student_dir = getStudentFileDir(COURSE_DIR, args.odir, "submitted")
+        # if args.offline:
+        #     delete = input("Delete other files (!=NbName.ipynb) from submission folder (y/N)? ")
+        # else:
+        #     delete = "n"
+        applyTemplateSubmissions(sortStudentCells, template_path, student_dir, nb_name, assign_name, delete="n")
+        print("Done")
+
+    if args.rmcells is not None:
+        assign_name, nb_name = args.rmcells
+        template_path = os.path.join(SOURCE_DIR, assign_name, nb_name)
+        student_dir = getStudentFileDir(COURSE_DIR, args.odir, "submitted")
+        # if args.offline:
+        #     delete = input("Delete other files (!=NbName.ipynb) from submission folder (y/N)? ")
+        # else:
+        #     delete = "n"
+        applyTemplateSubmissions(removeNonEssentialCells, template_path, student_dir, nb_name, assign_name, delete="n")
         print("Done")
 
     if args.info is not None:
