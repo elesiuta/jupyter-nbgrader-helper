@@ -48,7 +48,7 @@ import re
 
 ####### Config #######
 
-VERSION = "0.1.23"
+VERSION = "0.1.24"
 
 EMAIL_CONFIG = {
     "CC_ADDRESS": None, # "ccemail@domain.com" or SELF to cc MY_EMAIL_ADDRESS
@@ -1054,7 +1054,7 @@ def main():
             nb = readCsv(nb)
             points = nb[2]
             for row in nb[3:]:
-                grade_dict[row[0]]["fdist_score"] = sum(row[1:])
+                grade_dict[row[0]]["fdist_score"] = sum([float(i) for i in row[1:]])
         grade_list = [["student_id", assign_name, "timestamp"]]
         for student_id in grade_dict.keys():
             if (grade_dict[student_id]["raw_score"] != grade_dict[student_id]["dist_score"] or
