@@ -642,8 +642,11 @@ def getFeedbackScore(fullPath: str, studentID: str) -> dict:
         match = re.search(r'<li><a href="#(.+?)">Test cell</a> ?\(Score: ?(\d+\.\d+) ?/ ?(\d+\.\d+)\)</li>', line)
         if match:
             grade_id_list.append(match.groups()[0])
-            score_list.append(match.groups()[1])
-            score_totals.append(match.groups()[2])
+            score_list.append(float(match.groups()[1]))
+            score_totals.append(float(match.groups()[2]))
+        elif re.search(r'\(Score: ?(\d+\.\d+) ?/ ?(\d+\.\d+)\)', line):
+            match = re.search(r'\(Score: ?(\d+\.\d+) ?/ ?(\d+\.\d+)\)', line)
+            total_score = float(match.groups()[0])
         # try:
         #     if "Test cell</a> (Score" in line:
         #         space_split = line.split(" ")
@@ -651,9 +654,9 @@ def getFeedbackScore(fullPath: str, studentID: str) -> dict:
         #         score_totals.append(float(space_split[-1].split(")")[0]))
         #         quote_split = line.split("\"")
         #         grade_id_list.append(quote_split[1][1:])
-        elif " (Score: " in line:
-            line = line.split(" ")
-            total_score = float(line[line.index("(Score:")+1])
+        #     elif " (Score: " in line:
+        #         line = line.split(" ")
+        #         total_score = float(line[line.index("(Score:")+1])
         # except:
         #     print("Error for student: %s on line: %s" %(studentID, str(line)))
     return {"student_id": studentID, "total_score": total_score, "score_list": score_list, "score_totals": score_totals, "grade_id_list": grade_id_list}
