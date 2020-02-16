@@ -48,7 +48,7 @@ import re
 
 ####### Config #######
 
-VERSION = "0.1.25"
+VERSION = "0.1.26"
 
 EMAIL_CONFIG = {
     "CC_ADDRESS": None, # "ccemail@domain.com" or SELF to cc MY_EMAIL_ADDRESS
@@ -1043,9 +1043,12 @@ def main():
                     "dist_score": 0,
                     "fdist_score": 0
                 }
-        timestamps = applyFuncFiles(readTimestamps, student_dir, "timestamp.txt")
+        timestamps = applyFuncDirectory(readTimestamps, student_dir, assign_name, "timestamp.txt", None)
         for ts in timestamps:
-            grade_dict[ts["student_id"]]["read_timestamp"] = ts["read_timestamp"]
+            if ts["student_id"] in grade_dict:
+                grade_dict[ts["student_id"]]["read_timestamp"] = ts["read_timestamp"]
+            else:
+                print(ts["student_id"] + " has a submission timestamp but no recorded grade????")
         for nb in glob.glob(os.path.join(COURSE_DIR, "reports", assign_name, "dist-*.csv")):
             nb = readCsv(nb)
             points = nb[2]
