@@ -48,7 +48,7 @@ import re
 
 ####### Config #######
 
-VERSION = "0.1.21"
+VERSION = "0.1.22"
 
 EMAIL_CONFIG = {
     "CC_ADDRESS": None, # "ccemail@domain.com" or SELF to cc MY_EMAIL_ADDRESS
@@ -639,14 +639,15 @@ def getFeedbackScore(fullPath: str, studentID: str) -> dict:
     score_totals = []
     grade_id_list = []
     for line in source_html:
-        match = re.search(r'<li><a href="#(.+?)">Test cell</a> ?\(Score: ?(\d+\.\d+) ?/ ?(\d+\.\d+)\)</li>', line)
-        if match:
-            grade_id_list.append(match.groups()[0])
-            score_list.append(float(match.groups()[1]))
-            score_totals.append(float(match.groups()[2]))
-        elif re.search(r'\(Score: ?(\d+\.\d+) ?/ ?(\d+\.\d+)\)', line):
-            match = re.search(r'\(Score: ?(\d+\.\d+) ?/ ?(\d+\.\d+)\)', line)
-            total_score = float(match.groups()[0])
+        match_score = re.search(r'\(Score: ?(\d+\.\d+) ?/ ?(\d+\.\d+)\)', line)
+        if match_score:
+            match_test_cell = re.search(r'<li><a href="#(.+?)">Test cell</a> ?\(Score: ?(\d+\.\d+) ?/ ?(\d+\.\d+)\)</li>', line)
+            if match_test_cell:
+                grade_id_list.append(match_test_cell.groups()[0])
+                score_list.append(float(match_test_cell.groups()[1]))
+                score_totals.append(float(match_test_cell.groups()[2]))
+            else:
+                total_score = float(match_score.groups()[0])
         # try:
         #     if "Test cell</a> (Score" in line:
         #         space_split = line.split(" ")
@@ -1037,10 +1038,8 @@ def main():
         grade_list = [["student_id", assign_name, "timestamp"]]
         for student_id in grade_dict.keys():
             if (grade_dict[student_id]["raw_score"] != grade_dict[student_id]["dist_score"] or
-                grade_dict[student_id]["score"] != grade_dict[student_id]["dist_score"]):
+                grade_dict[student_id]["score"] != grade_dict[student_id]["fdist_score"]):
                 # I think raw_score is purely autograded and score reflects manual grading, but could be wrong and they both reflect manual
-                # used to check fdist_score here too but fdist is broken right now, html must have changed slightly and don't need it this semester so probably won't fix
-                # fdist was pretty hacky anyways
                 print(student_id + " grades don't match: " + str(grade_dict[student_id]))
                 grade_list.append([student_id, "ERROR", "ERROR"])
             else:
