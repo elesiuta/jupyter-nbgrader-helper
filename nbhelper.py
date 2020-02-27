@@ -48,7 +48,7 @@ import re
 
 ####### Config #######
 
-VERSION = "0.2.3"
+VERSION = "0.2.4"
 
 EMAIL_CONFIG = {
     "CC_ADDRESS": None, # "ccemail@domain.com" or SELF to cc MY_EMAIL_ADDRESS
@@ -1128,7 +1128,8 @@ def main():
     if args.ckdir is not None:
         assign_name, nb_name = args.ckdir
         student_dir = getStudentFileDir(COURSE_DIR, args.odir, "feedback")
-        applyFuncDirectory(printFileNames, student_dir, assign_name, nb_name, None)
+        none_list = applyFuncDirectory(printFileNames, student_dir, assign_name, nb_name, None)
+        print("Found %s files" %(len(none_list)))
         print("Done")
 
     if args.ckdup is not None:
