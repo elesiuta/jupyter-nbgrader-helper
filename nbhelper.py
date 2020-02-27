@@ -48,7 +48,7 @@ import re
 
 ####### Config #######
 
-VERSION = "0.2.1"
+VERSION = "0.2.2"
 
 EMAIL_CONFIG = {
     "CC_ADDRESS": None, # "ccemail@domain.com" or SELF to cc MY_EMAIL_ADDRESS
@@ -693,7 +693,12 @@ def emailFeedback(feedback_html_path: str, student_email_id: str) -> list:
     else:
         return [student_email_id, "0"]
 
-def zipFeedback(student_dir: str, data: list, assign_name: str) -> None:
+def removeZips(fullPath: str, studentID: str) -> None:
+    if os.path.isfile(fullPath):
+        if os.path.split(fullPath)[1] == "feedback.zip":
+            os.remove(fullPath)
+
+def zipFeedback(student_dir: str, data: list) -> None:
     # convert to dict
     studentDict = {}
     for sub_list in data:
@@ -703,7 +708,7 @@ def zipFeedback(student_dir: str, data: list, assign_name: str) -> None:
             studentDict[student["student_id"]].append(student["path"])
     # zip files into studentID/zip/feedback.zip
     for studentID in studentDict:
-        zipPath = os.path.join(student_dir, studentID, "zip_%s" %(assign_name))
+        zipPath = os.path.join(student_dir, studentID, "zip")
         os.makedirs(zipPath, exist_ok=True)
         with zipfile.ZipFile(os.path.join(zipPath, "feedback.zip"), 'w') as z:
             for f in studentDict[studentID]:
@@ -780,7 +785,7 @@ def main():
     parser.add_argument("--chmod", type=str, metavar=("rwx", "AssignName"), nargs=2,
                         help="Run chmod rwx on all submissions for an assignment (linux only)")
     parser.add_argument("--zip", type=str, metavar="AssignName", nargs="+",
-                        help="Combine multiple feedbacks into <course_dir>/feedback/<student_id>/zip_AssignName[AssignName ...]/feedback.zip")
+                        help="Combine multiple feedbacks into <course_dir>/feedback/<student_id>/zip/feedback.zip")
     parser.add_argument("--zipfiles", type=str, metavar="NbName.html", nargs="+",
                         help="Same as zip but matches files instead of assignment folders")
     parser.add_argument("--backup", type=str, metavar="nbgrader_step", choices=["autograded","feedback","release","source","submitted"],
@@ -1138,7 +1143,8 @@ def main():
         for assign_name in args.zip:
             data.append(applyFuncDirectory(returnPath, student_dir, assign_name, None, "html"))
         # use zip function
-        zipFeedback(student_dir, data, "".join(args.zip))
+        applyFuncDirectory(removeZips, student_dir, "zip", "feedback.zip", None)
+        zipFeedback(student_dir, data)
         print("Done")
 
     if args.zipfiles is not None:
@@ -1148,7 +1154,8 @@ def main():
         for f in args.zipfiles:
             data.append(applyFuncFiles(returnPath, student_dir, f))
         # use zip function
-        zipFeedback(student_dir, data, "".join(args.zipfiles))
+        applyFuncDirectory(removeZips, student_dir, "zip", "feedback.zip", None)
+        zipFeedback(student_dir, data)
         print("Done")
         
     if args.backup is not None:
