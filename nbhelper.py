@@ -48,7 +48,7 @@ import re
 
 ####### Config #######
 
-VERSION = "0.2.0"
+VERSION = "0.2.1"
 
 EMAIL_CONFIG = {
     "CC_ADDRESS": None, # "ccemail@domain.com" or SELF to cc MY_EMAIL_ADDRESS
@@ -81,9 +81,9 @@ https://nbgrader.readthedocs.io/en/stable/command_line_tools/index.html
 2.a) create and edit the notebook(s) and any other files in source/assignment_name
 2.b) convert notebook into assignment with View -> Cell Toolbar -> Create Assignment
 2.c) mark necessary cells as 'Manually graded answer', 'Autograded answer', 'Autograder tests', and 'Read-only'
-3.a) validate the source notebook(s) then generate the student versions of the notebook(s)
-4.a) after releasing, only hidden test cells can be modified without workarounds
-4.b) release assignment through formgrader if using JupyterHub (places in outbound exchange folder)
+3.a) validate the source notebook(s) then generate the student version of the notebook(s) (can be done through formgrader)
+4.a) after releasing, only hidden test cells can be modified without workarounds or students refetching the assignment
+4.b) release assignment through formgrader if using JupyterHub (places the generated student version in the outbound exchange folder)
 4.c) collect assignments submitted through JupyterHub using formgrader (or use zip collect for external)
 5. Autgrading and Feedback
 $ nbgrader autograde "assignment_name" # warning: only run the autograder in restricted environments and backup submissions first
@@ -111,7 +111,7 @@ all functions work on the ipynb/html files directly, it never touches the nbgrad
 this allows for more flexibility to repair notebooks nbgrader does not know how to handle and provides robustness in the event of mismatched versions or weird configuration changes by others
 
 --Test Case Templates--
-there are some useful templates at the bottom of this script
+there are some useful templates in the comments at the bottom of the source code
 
 --Version %s--
 https://github.com/elesiuta/jupyter-nbgrader-helper
@@ -693,7 +693,7 @@ def emailFeedback(feedback_html_path: str, student_email_id: str) -> list:
     else:
         return [student_email_id, "0"]
 
-def zipFeedback(student_dir: str, data: list) -> None:
+def zipFeedback(student_dir: str, data: list, assign_name: str) -> None:
     # convert to dict
     studentDict = {}
     for sub_list in data:
@@ -703,7 +703,7 @@ def zipFeedback(student_dir: str, data: list) -> None:
             studentDict[student["student_id"]].append(student["path"])
     # zip files into studentID/zip/feedback.zip
     for studentID in studentDict:
-        zipPath = os.path.join(student_dir, studentID, "zip")
+        zipPath = os.path.join(student_dir, studentID, "zip_%s" %(assign_name))
         os.makedirs(zipPath, exist_ok=True)
         with zipfile.ZipFile(os.path.join(zipPath, "feedback.zip"), 'w') as z:
             for f in studentDict[studentID]:
@@ -780,7 +780,7 @@ def main():
     parser.add_argument("--chmod", type=str, metavar=("rwx", "AssignName"), nargs=2,
                         help="Run chmod rwx on all submissions for an assignment (linux only)")
     parser.add_argument("--zip", type=str, metavar="AssignName", nargs="+",
-                        help="Combine multiple feedbacks into <course_dir>/feedback/<student_id>/zip/feedback.zip")
+                        help="Combine multiple feedbacks into <course_dir>/feedback/<student_id>/zip_AssignName[AssignName ...]/feedback.zip")
     parser.add_argument("--zipfiles", type=str, metavar="NbName.html", nargs="+",
                         help="Same as zip but matches files instead of assignment folders")
     parser.add_argument("--backup", type=str, metavar="nbgrader_step", choices=["autograded","feedback","release","source","submitted"],
@@ -1138,7 +1138,7 @@ def main():
         for assign_name in args.zip:
             data.append(applyFuncDirectory(returnPath, student_dir, assign_name, None, "html"))
         # use zip function
-        zipFeedback(student_dir, data)
+        zipFeedback(student_dir, data, "".join(args.zip))
         print("Done")
 
     if args.zipfiles is not None:
@@ -1148,7 +1148,7 @@ def main():
         for f in args.zipfiles:
             data.append(applyFuncFiles(returnPath, student_dir, f))
         # use zip function
-        zipFeedback(student_dir, data)
+        zipFeedback(student_dir, data, "".join(args.zipfiles))
         print("Done")
         
     if args.backup is not None:
