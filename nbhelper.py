@@ -48,7 +48,7 @@ import re
 
 ####### Config #######
 
-VERSION = "0.2.2"
+VERSION = "0.2.3"
 
 EMAIL_CONFIG = {
     "CC_ADDRESS": None, # "ccemail@domain.com" or SELF to cc MY_EMAIL_ADDRESS
@@ -66,7 +66,7 @@ EMAIL_CONFIG = {
 NB_HELP = """
 REMEMBER TO BACKUP THE SUBMITTED NOTEBOOKS REGULARLY
 most of the course can be regenerated from these along with your source notebooks
-plus other things could go wrong, you may also want to backup gradebook.db to save any manual grading (I think it's saved here, this script never touches it)
+you may also want to backup gradebook.db to save any manual grading (I think it's saved there, this script never touches it)
 this script is designed to be as nondestructive as possible, most functions just read course files but some do make modifications to the submitted notebooks, trying for minimal modifications and only when necessary
 
 --Quick reference for nbgrader usage--
@@ -90,12 +90,12 @@ $ nbgrader autograde "assignment_name" # warning: only run the autograder in res
 $ nbgrader generate_feedback "assignment_name" # just feedback in <0.6.0 (do not release, uses non-private outbound exchange folder)
 $ nbgrader export # exports grades as a csv file
 
---Workaround for getting errors on edits made after submissions received--
+--Workaround for getting errors on assignment source edits made after submissions received--
 https://github.com/jupyter/nbgrader/issues/1069
 nbgrader db assignment remove "assignment_name"
 nbgrader db assignment add "assignment_name"
 nbgrader assign "assignment_name"
-do/apply edits
+do/apply edits (generate)
 nbgrader release "assignment_name"
 jupyter server may need to be restarted at any point during these steps
 
