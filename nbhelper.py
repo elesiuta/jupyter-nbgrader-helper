@@ -48,7 +48,7 @@ import re
 
 ####### Config #######
 
-VERSION = "0.2.5"
+VERSION = "0.2.6"
 
 EMAIL_CONFIG = {
     "CC_ADDRESS": None, # "ccemail@domain.com" or SELF to cc MY_EMAIL_ADDRESS
@@ -142,6 +142,8 @@ def readJson(fname: str) -> dict:
     return data
 
 def writeJson(fname: str, data: dict) -> None:
+    if not os.path.isdir(os.path.dirname(fname)):
+        os.makedirs(os.path.dirname(fname))
     with open(fname, "w", errors="ignore") as json_file:  
         json.dump(data, json_file, indent=1, separators=(',', ': '))
 
