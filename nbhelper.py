@@ -48,7 +48,7 @@ import re
 
 ####### Config #######
 
-VERSION = "0.2.4"
+VERSION = "0.2.5"
 
 EMAIL_CONFIG = {
     "CC_ADDRESS": None, # "ccemail@domain.com" or SELF to cc MY_EMAIL_ADDRESS
@@ -204,7 +204,7 @@ def sendEmail(smtp_server: typing.Union[str, smtplib.SMTP],
 
 ####### Functions for applying functions #######
 
-def applyTemplateSubmissions(func, template_path: str, submit_dir: str, file_name: str, assignment_name = None, delete = "n") -> None:
+def applyTemplateSubmissions(func, template_path: str, submit_dir: str, file_name: str, assignment_name = None, delete = "n", **kwargs) -> None:
     template = readJson(template_path)
     if os.path.isdir(submit_dir):
         for dirName, subdirList, fileList in os.walk(submit_dir):
@@ -215,7 +215,7 @@ def applyTemplateSubmissions(func, template_path: str, submit_dir: str, file_nam
                 if (folder == assignment_name or assignment_name is None) and f == file_name:
                     studentID = os.path.split(os.path.split(os.path.split(fullPath)[0])[0])[1]
                     studentNB = readJson(fullPath)
-                    studentNB = func(template, studentNB, studentID)
+                    studentNB = func(template, studentNB, studentID, **kwargs)
                     if studentNB is not None:
                         writeJson(fullPath, studentNB)
                 elif delete.lower() == "y":
@@ -577,6 +577,27 @@ def updateCellsMeta(template: dict, student: dict, student_id: str = "") -> typi
         print("No changes made for:     " + student_id)
         return None
 
+def forceAutograde(template: dict, student: dict, student_id: str = "", course_dir = None, AssignName = None, NbNameipynb = None) -> typing.Union[dict, None]:
+    for cell in template["cells"]:
+        try:
+            # test cell
+            if cell["metadata"]["nbgrader"]["locked"] == True:
+                found_test_cell = False
+                for i in range(len(student["cells"])):
+                    try:
+                        if student["cells"][i]["metadata"]["nbgrader"]["grade_id"] == cell["metadata"]["nbgrader"]["grade_id"]:
+                            found_test_cell = True
+                            student["cells"][i] = cell
+                            break
+                    except:
+                        pass
+                if found_test_cell == False:
+                    print("Missing test cells (fix with --add) for " + student_id)
+        except:
+            pass
+    writeJson(os.path.join(course_dir, "nbhelper-autograde", student_id, AssignName, NbNameipynb), student)
+    return None
+
 def quickInfo(fullPath: str, studentID: str):
     studentNB = readJson(fullPath)
     studentSize = os.path.getsize(fullPath)
@@ -758,6 +779,8 @@ def main():
                         help="Update test points by using the corresponding file in source as a template and matching the cell's grade_id, also combines duplicate grade_ids")
     parser.add_argument("--meta", type=str, metavar=("AssignName", "NbName.ipynb"), nargs=2,
                         help="Fix cell metadata by replacing with that of source, matches based on grade_id")
+    parser.add_argument("--forcegrade", type=str, metavar=("AssignName", "NbName.ipynb"), nargs=2,
+                        help="Sometimes student notebooks fail so badly they don't even autograde and the error messages aren't helpful at all, this performs the first step of autograders job: combines the hidden test cases with the submission but places it in <course_dir>/nbhelper-autograde/<student_id>/<AssignName>/<NbName.ipynb> You can then run and test the notebook in jupyter and can even move this 'autograded' notebook (restart and run all cells) to the autograded directory and use --dist to 'grade' it")
     parser.add_argument("--sortcells", type=str, metavar=("AssignName", "NbName.ipynb"), nargs=2,
                         help="Sort cells of student notebooks to match order of source, matches based on grade_id, non grade_id cells are placed at the end")
     parser.add_argument("--rmcells", type=str, metavar=("AssignName", "NbName.ipynb"), nargs=2,
@@ -860,6 +883,17 @@ def main():
         # else:
         #     delete = "n"
         applyTemplateSubmissions(updateCellsMeta, template_path, student_dir, nb_name, assign_name, delete="n")
+        print("Done")
+
+    if args.forcegrade is not None:
+        assign_name, nb_name = args.forcegrade
+        template_path = os.path.join(SOURCE_DIR, assign_name, nb_name)
+        student_dir = getStudentFileDir(COURSE_DIR, args.odir, "submitted")
+        # if args.offline:
+        #     delete = input("Delete other files (!=NbName.ipynb) from submission folder (y/N)? ")
+        # else:
+        #     delete = "n"
+        applyTemplateSubmissions(forceAutograde, template_path, student_dir, nb_name, assign_name, delete="n", course_dir = COURSE_DIR, AssignName = assign_name, NbNameipynb = nb_name)
         print("Done")
 
     if args.sortcells is not None:

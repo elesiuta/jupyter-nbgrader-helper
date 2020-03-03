@@ -6,6 +6,7 @@ usage: nbhelper.py [-h] [--nbhelp]
                    [--add AssignName NbName.ipynb]
                    [--fix AssignName NbName.ipynb]
                    [--meta AssignName NbName.ipynb]
+                   [--forcegrade AssignName NbName.ipynb]
                    [--sortcells AssignName NbName.ipynb]
                    [--rmcells AssignName NbName.ipynb]
                    [--select StudentID [StudentID ...]]
@@ -46,6 +47,17 @@ optional arguments:
   --meta AssignName NbName.ipynb
                         Fix cell metadata by replacing with that of source,
                         matches based on grade_id
+  --forcegrade AssignName NbName.ipynb
+                        Sometimes student notebooks fail so badly they don't
+                        even autograde and the error messages aren't helpful
+                        at all, this performs the first step of autograders
+                        job: combines the hidden test cases with the
+                        submission but places it in <course_dir>/nbhelper-
+                        autograde/<student_id>/<AssignName>/<NbName.ipynb> You
+                        can then run and test the notebook in jupyter and can
+                        even move this 'autograded' notebook (restart and run
+                        all cells) to the autograded directory and use --dist
+                        to 'grade' it
   --sortcells AssignName NbName.ipynb
                         Sort cells of student notebooks to match order of
                         source, matches based on grade_id, non grade_id cells
