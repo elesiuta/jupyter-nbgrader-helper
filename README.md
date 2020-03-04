@@ -48,16 +48,19 @@ optional arguments:
                         Fix cell metadata by replacing with that of source,
                         matches based on grade_id
   --forcegrade AssignName NbName.ipynb
-                        Sometimes student notebooks fail so badly they don't
-                        even autograde and the error messages aren't helpful
-                        at all, this performs the first step of autograders
-                        job: combines the hidden test cases with the
-                        submission but places it in <course_dir>/nbhelper-
-                        autograde/<student_id>/<AssignName>/<NbName.ipynb> You
-                        can then run and test the notebook in jupyter and can
-                        even move this 'autograded' notebook (restart and run
-                        all cells) to the autograded directory and use --dist
-                        to 'grade' it
+                        For particularly troublesome student notebooks that
+                        fail so badly they don't even autograde or produce
+                        proper error messages (you should run this command
+                        with --select), this partially does autograders job:
+                        combines the hidden test cases with the submission but
+                        places it in <course_dir>/nbhelper-
+                        autograde/<student_id>/<AssignName>/<NbName.ipynb>
+                        then tries executing it via command line. You can also
+                        run and test this notebook yourself, then move this
+                        'autograded' notebook to the autograded directory and
+                        use --dist to 'grade' it (make sure failed tests
+                        retain their errors or they'll count as 'correct',
+                        grades are not entered in gradebook.db)
   --sortcells AssignName NbName.ipynb
                         Sort cells of student notebooks to match order of
                         source, matches based on grade_id, non grade_id cells

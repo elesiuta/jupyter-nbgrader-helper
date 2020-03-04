@@ -48,7 +48,7 @@ import re
 
 ####### Config #######
 
-VERSION = "0.2.6"
+VERSION = "0.2.7"
 
 EMAIL_CONFIG = {
     "CC_ADDRESS": None, # "ccemail@domain.com" or SELF to cc MY_EMAIL_ADDRESS
@@ -597,7 +597,12 @@ def forceAutograde(template: dict, student: dict, student_id: str = "", course_d
                     print("Missing test cells (fix with --add) for " + student_id)
         except:
             pass
-    writeJson(os.path.join(course_dir, "nbhelper-autograde", student_id, AssignName, NbNameipynb), student)
+    new_path = os.path.join(course_dir, "nbhelper-autograde", student_id, AssignName, NbNameipynb)
+    writeJson(new_path, student)
+    # https://nbconvert.readthedocs.io/en/latest/execute_api.html
+    # might investigate how the preprocess works but this was easier and mostly just a hack for some rare edgecases
+    command = "jupyter nbconvert --execute --ExecutePreprocessor.timeout=60 --ExecutePreprocessor.allow_errors=True --to notebook --inplace "
+    os.system(command + new_path)
     return None
 
 def quickInfo(fullPath: str, studentID: str):
@@ -782,7 +787,7 @@ def main():
     parser.add_argument("--meta", type=str, metavar=("AssignName", "NbName.ipynb"), nargs=2,
                         help="Fix cell metadata by replacing with that of source, matches based on grade_id")
     parser.add_argument("--forcegrade", type=str, metavar=("AssignName", "NbName.ipynb"), nargs=2,
-                        help="Sometimes student notebooks fail so badly they don't even autograde and the error messages aren't helpful at all, this performs the first step of autograders job: combines the hidden test cases with the submission but places it in <course_dir>/nbhelper-autograde/<student_id>/<AssignName>/<NbName.ipynb> You can then run and test the notebook in jupyter and can even move this 'autograded' notebook (restart and run all cells) to the autograded directory and use --dist to 'grade' it")
+                        help="For particularly troublesome student notebooks that fail so badly they don't even autograde or produce proper error messages (you should run this command with --select), this partially does autograders job: combines the hidden test cases with the submission but places it in <course_dir>/nbhelper-autograde/<student_id>/<AssignName>/<NbName.ipynb> then tries executing it via command line. You can also run and test this notebook yourself, then move this 'autograded' notebook to the autograded directory and use --dist to 'grade' it (make sure failed tests retain their errors or they'll count as 'correct', grades are not entered in gradebook.db)")
     parser.add_argument("--sortcells", type=str, metavar=("AssignName", "NbName.ipynb"), nargs=2,
                         help="Sort cells of student notebooks to match order of source, matches based on grade_id, non grade_id cells are placed at the end")
     parser.add_argument("--rmcells", type=str, metavar=("AssignName", "NbName.ipynb"), nargs=2,
