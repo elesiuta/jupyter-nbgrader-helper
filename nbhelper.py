@@ -48,7 +48,7 @@ import re
 
 ####### Config #######
 
-VERSION = "0.2.7"
+VERSION = "0.2.8"
 
 EMAIL_CONFIG = {
     "CC_ADDRESS": None, # "ccemail@domain.com" or SELF to cc MY_EMAIL_ADDRESS
@@ -600,8 +600,10 @@ def forceAutograde(template: dict, student: dict, student_id: str = "", course_d
     new_path = os.path.join(course_dir, "nbhelper-autograde", student_id, AssignName, NbNameipynb)
     writeJson(new_path, student)
     # https://nbconvert.readthedocs.io/en/latest/execute_api.html
-    # might investigate how the preprocess works but this was easier and mostly just a hack for some rare edgecases
-    command = "jupyter nbconvert --execute --ExecutePreprocessor.timeout=60 --ExecutePreprocessor.allow_errors=True --to notebook --inplace "
+    # https://nbconvert.readthedocs.io/en/latest/config_options.html
+    # might investigate how the preprocess works but this was easier and mostly just a hack for some rare edgecases, there's probably a more proper solution but most of the code to do this was already here for other reasons
+    # just using these flags with nbgrader might be enough to fix your issue
+    command = "jupyter nbconvert --execute --ExecutePreprocessor.timeout=60 --ExecutePreprocessor.interrupt_on_timeout=True --ExecutePreprocessor.allow_errors=True --to notebook --inplace "
     os.system(command + new_path)
     return None
 
