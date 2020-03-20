@@ -48,7 +48,7 @@ import re
 
 ####### Config #######
 
-VERSION = "0.2.8"
+VERSION = "0.2.9"
 
 EMAIL_CONFIG = {
     "CC_ADDRESS": None, # "ccemail@domain.com" or SELF to cc MY_EMAIL_ADDRESS
@@ -601,8 +601,8 @@ def forceAutograde(template: dict, student: dict, student_id: str = "", course_d
     writeJson(new_path, student)
     # https://nbconvert.readthedocs.io/en/latest/execute_api.html
     # https://nbconvert.readthedocs.io/en/latest/config_options.html
-    # might investigate how the preprocess works but this was easier and mostly just a hack for some rare edgecases, there's probably a more proper solution but most of the code to do this was already here for other reasons
-    # just using these flags with nbgrader might be enough to fix your issue
+    # this is mostly just a quick hack for some rare edgecases, there's probably a more proper solution but most of the code to do this was already here for other reasons
+    # using some of these flags with nbgrader might be enough to fix your issue
     command = "jupyter nbconvert --execute --ExecutePreprocessor.timeout=60 --ExecutePreprocessor.interrupt_on_timeout=True --ExecutePreprocessor.allow_errors=True --to notebook --inplace "
     os.system(command + new_path)
     return None
@@ -816,6 +816,8 @@ def main():
                         help="Checks all submitted directories for NbName.extension and reports subfolders containing multiple files of the same extension")
     parser.add_argument("--chmod", type=str, metavar=("rwx", "AssignName"), nargs=2,
                         help="Run chmod rwx on all submissions for an assignment (linux only)")
+    parser.add_argument("--avenue-collect", dest="avenue_collect", type=str, metavar=("submissions.zip", "AssignName"), nargs=2,
+                        help="Basically zip collect but tailored to avenue (LMS by D2L), uses <course_dir>/classlist.csv to lookup Student IDs using names from submissions, overwrites submissions in submitted directory, backup first!")
     parser.add_argument("--zip", type=str, metavar="AssignName", nargs="+",
                         help="Combine multiple feedbacks into <course_dir>/feedback/<student_id>/zip/feedback.zip")
     parser.add_argument("--zipfiles", type=str, metavar="NbName.html", nargs="+",
@@ -1178,6 +1180,48 @@ def main():
     if args.ckdup is not None:
         student_dir = getStudentFileDir(COURSE_DIR, args.odir, "submitted")
         applyFuncFiles(checkDuplicates, student_dir, args.ckdup)
+        print("Done")
+
+    if args.avenue_collect is not None:
+        zip_file, assign_name = args.avenue_collect
+        student_dir = getStudentFileDir(COURSE_DIR, args.odir, "submitted")
+        tmp_dir = os.path.join(COURSE_DIR, "nbhelper-avenue-tmp")
+        classlist = os.path.join(COURSE_DIR, "classlist.csv")
+
+        # create lookup dictionary for students
+        import csv
+        student_dictionary = {}
+        with open(classlist, "r") as f:
+            classlist = list(csv.reader(f))
+        for row in classlist[1:]:
+            student_name = " ".join([row[3], row[2]])
+            student_id = str(row[4])
+            student_dictionary[student_name] = student_id
+
+        # rename and move submissions
+        log = []
+        shutil.unpack_archive(zip_file, tmp_dir)
+        submission_list = os.listdir(tmp_dir)
+        for submission in submission_list:
+            try:
+                log.append([submission])
+                student_name = submission.split(" - ")[1]
+                student_id = student_dictionary[student_name]
+                # file_name = submission.split(" - ")[-1]
+                file_name = "%s.ipynb" %(assign_name)
+                current_path = os.path.join(tmp_dir, submission)
+                new_path = os.path.join(student_dir, student_id, assign_name, file_name)
+                if not os.path.isdir(os.path.dirname(new_path)):
+                    os.makedirs(os.path.dirname(new_path))
+                shutil.move(current_path, new_path)
+                # time_stamp_path = os.path.join(student_dir, student_id, assign_name, "timestamp.txt")
+                # with open(time_stamp_path, "w") as f:
+                #     f.write("1970-01-01 00:00:00.000000 UTC")
+                log[-1] += [student_id, file_name, "SUCCESS"]
+            except:
+                log[-1] += ["","","FAILURE"]
+
+        writeCsv(os.path.join(COURSE_DIR, "reports", assign_name, "avenue-collect-" + datetime.datetime.now().strftime("%m-%d-%H-%M") + ".csv"), log)
         print("Done")
 
     if args.zip is not None:

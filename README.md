@@ -1,7 +1,7 @@
 # jupyter-nbgrader-helper
 
 ```
-usage: nbhelper.py [-h] [--nbhelp] 
+usage: nbhelper.py [-h] [--nbhelp]
                    [--cdir path] [--sdir path] [--odir path]
                    [--add AssignName NbName.ipynb]
                    [--fix AssignName NbName.ipynb]
@@ -18,6 +18,7 @@ usage: nbhelper.py [-h] [--nbhelp]
                    [--ckgrades AssignName]
                    [--ckdup NbName.extension]
                    [--chmod rwx AssignName]
+                   [--avenue-collect submissions.zip AssignName]
                    [--zip AssignName [AssignName ...]]
                    [--zipfiles NbName.html [NbName.html ...]]
                    [--backup nbgrader_step]
@@ -108,6 +109,11 @@ optional arguments:
   --chmod rwx AssignName
                         Run chmod rwx on all submissions for an assignment
                         (linux only)
+  --avenue-collect submissions.zip AssignName
+                        Basically zip collect but tailored to avenue (LMS by
+                        D2L), uses <course_dir>/classlist.csv to lookup
+                        Student IDs using names from submissions, overwrites
+                        submissions in submitted directory, backup first!
   --zip AssignName [AssignName ...]
                         Combine multiple feedbacks into
                         <course_dir>/feedback/<student_id>/zip/feedback.zip
