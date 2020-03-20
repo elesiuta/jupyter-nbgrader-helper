@@ -48,7 +48,7 @@ import re
 
 ####### Config #######
 
-VERSION = "0.2.10"
+VERSION = "0.2.11"
 
 EMAIL_CONFIG = {
     "CC_ADDRESS": None, # "ccemail@domain.com" or SELF to cc MY_EMAIL_ADDRESS
@@ -638,17 +638,21 @@ def getAutogradedScore(fullPath: str, studentID: str) -> dict:
     for cell in source_json["cells"]:
         try:
             if cell["metadata"]["nbgrader"]["points"] >= 0:
-                if (cell["outputs"] == [] or
-                        (len(cell["outputs"]) >= 1 and
-                         all([("ename" not in cell_output and
-                               "evalue" not in cell_output and
-                               "traceback" not in cell_output and
-                               "output_type" in cell_output and
-                               cell_output["output_type"] != "error")
-                              for cell_output in cell["outputs"]]
-                             )
-                         )
-                    ):
+                if (cell["outputs"] == [] or (
+                    len(cell["outputs"]) >= 1 and
+                    all([
+                        (
+                            "ename" not in cell_output and
+                            "evalue" not in cell_output and
+                            "traceback" not in cell_output and
+                            ("output_type" in cell_output and
+                            cell_output["output_type"] != "error") and
+                            ("name" not in cell_output or
+                            cell_output["name"] != "stderr")
+                        )
+                        for cell_output in cell["outputs"]
+                    ])
+                )):
                     pass_list.append(1)
                     error_list.append("No Error (passed test)")
                 else:
