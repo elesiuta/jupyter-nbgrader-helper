@@ -48,7 +48,7 @@ import re
 
 ####### Config #######
 
-VERSION = "0.2.9"
+VERSION = "0.2.10"
 
 EMAIL_CONFIG = {
     "CC_ADDRESS": None, # "ccemail@domain.com" or SELF to cc MY_EMAIL_ADDRESS
@@ -1104,45 +1104,76 @@ def main():
         assign_name = args.ckgrades
         student_dir = getStudentFileDir(COURSE_DIR, args.odir, "submitted")
         grade_dict = {}
+        # check nbgrader grades
         nbgrader_grades = readCsv(os.path.join(COURSE_DIR, "grades.csv"))
         for row in nbgrader_grades:
             if row[0] == assign_name:
                 student_id = row[3]
                 grade_dict[student_id] = {
                     "timestamp": row[2],
+                    "read_timestamp": 0,
                     "raw_score": float(row[7]),
                     "score": float(row[9]),
                     "dist_score": 0,
                     "fdist_score": 0
                 }
+        # check timestamps
         timestamps = applyFuncDirectory(readTimestamps, student_dir, assign_name, "timestamp.txt", None)
         for ts in timestamps:
-            if ts["student_id"] in grade_dict:
-                grade_dict[ts["student_id"]]["read_timestamp"] = ts["read_timestamp"]
-            else:
+            if ts["student_id"] not in grade_dict:
                 print(ts["student_id"] + " has a submission timestamp but no recorded grade????")
+                grade_dict[student_id] = {
+                    "timestamp": "",
+                    "read_timestamp": "",
+                    "raw_score": 0,
+                    "score": 0,
+                    "dist_score": 0,
+                    "fdist_score": 0
+                }
+            grade_dict[ts["student_id"]]["read_timestamp"] = ts["read_timestamp"]
+        # check dist (grades obtained from autograded notebooks)
         for nb in glob.glob(os.path.join(COURSE_DIR, "reports", assign_name, "dist-*.csv")):
             nb = readCsv(nb)
             points = nb[2]
             for row in nb[3:]:
-                grade_dict[row[0]]["dist_score"] = sum([float(i) * float(j) for i, j in zip(points[1:], row[1:])])
+                if row[0] not in grade_dict:
+                    grade_dict[student_id] = {
+                        "timestamp": "",
+                        "read_timestamp": "",
+                        "raw_score": 0,
+                        "score": 0,
+                        "dist_score": 0,
+                        "fdist_score": 0
+                    }
+                grade_dict[row[0]]["dist_score"] += sum([float(i) * float(j) for i, j in zip(points[1:], row[1:])])
+        # check fdist (grades obtained from generated feedback)
         for nb in glob.glob(os.path.join(COURSE_DIR, "reports", assign_name, "fdist-*.csv")):
             nb = readCsv(nb)
             points = nb[2]
             for row in nb[3:]:
-                grade_dict[row[0]]["fdist_score"] = sum([float(i) for i in row[1:]])
+                if row[0] not in grade_dict:
+                    grade_dict[student_id] = {
+                        "timestamp": "",
+                        "read_timestamp": "",
+                        "raw_score": 0,
+                        "score": 0,
+                        "dist_score": 0,
+                        "fdist_score": 0
+                    }
+                grade_dict[row[0]]["fdist_score"] += sum([float(i) for i in row[1:]])
+        # compare and export grades
         grade_list = [["student_id", assign_name, "timestamp"]]
         for student_id in grade_dict.keys():
             if (grade_dict[student_id]["raw_score"] != grade_dict[student_id]["dist_score"] or
                 grade_dict[student_id]["score"] != grade_dict[student_id]["fdist_score"]):
                 # I think raw_score is purely autograded and score reflects manual grading, but could be wrong and they both reflect manual
                 print(student_id + " grades don't match: " + str(grade_dict[student_id]))
-                grade_list.append([student_id, "ERROR", "ERROR"])
+                grade_list.append([student_id, grade_dict[student_id]["score"], grade_dict[student_id]["timestamp"], "ERROR", str(grade_dict[student_id])])
             elif (grade_dict[student_id]["timestamp"] is not None and 
                   len(str(grade_dict[student_id]["timestamp"])) > 0 and
                   str(grade_dict[student_id]["timestamp"]).strip() != str(grade_dict[student_id]["read_timestamp"]).strip()):
                 print(student_id + " timestamps don't match: " + str(grade_dict[student_id]))
-                grade_list.append([student_id, "ERROR", "ERROR"])
+                grade_list.append([student_id, grade_dict[student_id]["score"], grade_dict[student_id]["timestamp"], "ERROR", str(grade_dict[student_id])])
             else:
                 grade_list.append([student_id, grade_dict[student_id]["score"], grade_dict[student_id]["timestamp"]])
         writeCsv(os.path.join(COURSE_DIR, "reports", assign_name, "ckdgrades.csv"), grade_list)
