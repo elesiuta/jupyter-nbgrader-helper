@@ -48,7 +48,7 @@ import re
 
 ####### Config #######
 
-VERSION = "0.2.11"
+VERSION = "0.2.12"
 
 EMAIL_CONFIG = {
     "CC_ADDRESS": None, # "ccemail@domain.com" or SELF to cc MY_EMAIL_ADDRESS
@@ -1224,13 +1224,17 @@ def main():
         classlist = os.path.join(COURSE_DIR, "classlist.csv")
 
         # create lookup dictionary for students
+        # use same column names as 'nbgrader db student import' (requires id, first_name, last_name)
         import csv
         student_dictionary = {}
         with open(classlist, "r") as f:
             classlist = list(csv.reader(f))
+        index_id = classlist[0].index("id")
+        index_first_name = classlist[0].index("first_name")
+        index_last_name = classlist[0].index("last_name")
         for row in classlist[1:]:
-            student_name = " ".join([row[3], row[2]])
-            student_id = str(row[4])
+            student_name = " ".join([row[index_first_name], row[index_last_name]])
+            student_id = str(row[index_id])
             student_dictionary[student_name] = student_id
 
         # rename and move submissions
