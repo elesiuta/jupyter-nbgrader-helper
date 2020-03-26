@@ -48,7 +48,7 @@ import re
 
 ####### Config #######
 
-VERSION = "0.2.12"
+VERSION = "0.2.13"
 
 EMAIL_CONFIG = {
     "CC_ADDRESS": None, # "ccemail@domain.com" or SELF to cc MY_EMAIL_ADDRESS
@@ -216,10 +216,13 @@ def applyTemplateSubmissions(func, template_path: str, submit_dir: str, file_nam
                 folder = os.path.basename(dirName)
                 if (folder == assignment_name or assignment_name is None) and f == file_name:
                     studentID = os.path.split(os.path.split(os.path.split(fullPath)[0])[0])[1]
-                    studentNB = readJson(fullPath)
-                    studentNB = func(template, studentNB, studentID, **kwargs)
-                    if studentNB is not None:
-                        writeJson(fullPath, studentNB)
+                    try:
+                        studentNB = readJson(fullPath)
+                        studentNB = func(template, studentNB, studentID, **kwargs)
+                        if studentNB is not None:
+                            writeJson(fullPath, studentNB)
+                    except:
+                        print("ERROR: Something is wrong with: " + str(studentID))
                 elif delete.lower() == "y":
                     os.remove(fullPath)
 
