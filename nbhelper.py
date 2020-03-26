@@ -48,7 +48,7 @@ import re
 
 ####### Config #######
 
-VERSION = "0.2.13"
+VERSION = "0.2.14"
 
 EMAIL_CONFIG = {
     "CC_ADDRESS": None, # "ccemail@domain.com" or SELF to cc MY_EMAIL_ADDRESS
@@ -221,8 +221,9 @@ def applyTemplateSubmissions(func, template_path: str, submit_dir: str, file_nam
                         studentNB = func(template, studentNB, studentID, **kwargs)
                         if studentNB is not None:
                             writeJson(fullPath, studentNB)
-                    except:
+                    except Exception as e:
                         print("ERROR: Something is wrong with: " + str(studentID))
+                        print(e, file=sys.stderr)
                 elif delete.lower() == "y":
                     os.remove(fullPath)
 
@@ -235,7 +236,11 @@ def applyFuncFiles(func, directory: str, file_name: str, *args) -> list:
                 fullPath = os.path.join(dirName, f)
                 if f == file_name:
                     studentID = os.path.split(os.path.split(os.path.split(fullPath)[0])[0])[1]
-                    output.append(func(fullPath, studentID, *args))
+                    try:
+                        output.append(func(fullPath, studentID, *args))
+                    except Exception as e:
+                        print("ERROR: Something is wrong with: " + str(studentID))
+                        print(e, file=sys.stderr)
     return output
 
 def applyFuncDirectory(func, directory: str, assignment_name: str, file_name: typing.Union[str, None], file_extension: typing.Union[str, None], *args, **kwargs) -> list:
@@ -250,7 +255,11 @@ def applyFuncDirectory(func, directory: str, assignment_name: str, file_name: ty
                     if file_name is None or f == file_name:
                         if file_extension is None or f.split(".")[-1] == file_extension:
                             studentID = os.path.split(os.path.split(os.path.split(fullPath)[0])[0])[1]
-                            output.append(func(fullPath, studentID, *args, **kwargs))
+                            try:
+                                output.append(func(fullPath, studentID, *args, **kwargs))
+                            except Exception as e:
+                                print("ERROR: Something is wrong with: " + str(studentID))
+                                print(e, file=sys.stderr)
     return output
 
 
@@ -578,6 +587,13 @@ def updateCellsMeta(template: dict, student: dict, student_id: str = "") -> typi
     if modified:
         print("Updated cell metadata for:  " + student_id)
         return student
+        # notebooks also have some metadata at their root, if you're still having issues, quickly remove it with
+        # new_student_nb = {}
+        # new_student_nb["cells"] = student["cells"]
+        # return new_student_nb
+        # (might want to replace it with version from template)
+        # more likely though the issue is with metadata for non-grade_id cells
+        # in which case the simplest solution is to use rmcells
     else:
         print("No changes made for:     " + student_id)
         return None
@@ -1118,7 +1134,7 @@ def main():
                 student_id = row[3]
                 grade_dict[student_id] = {
                     "timestamp": row[2],
-                    "read_timestamp": 0,
+                    "read_timestamp": "",
                     "raw_score": float(row[7]),
                     "score": float(row[9]),
                     "dist_score": 0,
