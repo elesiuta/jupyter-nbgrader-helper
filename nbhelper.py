@@ -48,7 +48,7 @@ import re
 
 ####### Config #######
 
-VERSION = "0.2.15"
+VERSION = "0.2.16"
 
 EMAIL_CONFIG = {
     "CC_ADDRESS": None, # "ccemail@domain.com" or SELF to cc MY_EMAIL_ADDRESS
@@ -416,8 +416,11 @@ def removeNonEssentialCells(template: dict, student: dict, student_id: str = "")
                 pass
         if not found_student_cell:
             print("Student: %s is missing test cell: %s" %(student_id, grade_id))
-    # return updated notebook (probably still the same object but who cares)
     print("Updated notebook for:  " + student_id)
+    # fresh notebook too (careful not to modify template, it is not re-read between students)
+    student = {}
+    for key in template:
+        student[key] = template[key]
     student["cells"] = new_student_cells
     return student
 
@@ -587,13 +590,7 @@ def updateCellsMeta(template: dict, student: dict, student_id: str = "") -> typi
     if modified:
         print("Updated cell metadata for:  " + student_id)
         return student
-        # notebooks also have some metadata at their root, if you're still having issues, quickly remove it with
-        # new_student_nb = {}
-        # new_student_nb["cells"] = student["cells"]
-        # return new_student_nb
-        # (might want to replace it with version from template)
-        # more likely though the issue is with metadata for non-grade_id cells
-        # in which case the simplest solution is to use rmcells
+        # if this still doesn't work, use rmcells to remove the non-grade_id cells that this doesn't update the metadata for
     else:
         print("No changes made for:     " + student_id)
         return None
