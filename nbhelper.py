@@ -48,7 +48,7 @@ import re
 
 ####### Config #######
 
-VERSION = "0.2.14"
+VERSION = "0.2.15"
 
 EMAIL_CONFIG = {
     "CC_ADDRESS": None, # "ccemail@domain.com" or SELF to cc MY_EMAIL_ADDRESS
@@ -223,7 +223,7 @@ def applyTemplateSubmissions(func, template_path: str, submit_dir: str, file_nam
                             writeJson(fullPath, studentNB)
                     except Exception as e:
                         print("ERROR: Something is wrong with: " + str(studentID))
-                        print(e, file=sys.stderr)
+                        print(repr(e), file=sys.stderr)
                 elif delete.lower() == "y":
                     os.remove(fullPath)
 
@@ -240,7 +240,7 @@ def applyFuncFiles(func, directory: str, file_name: str, *args) -> list:
                         output.append(func(fullPath, studentID, *args))
                     except Exception as e:
                         print("ERROR: Something is wrong with: " + str(studentID))
-                        print(e, file=sys.stderr)
+                        print(repr(e), file=sys.stderr)
     return output
 
 def applyFuncDirectory(func, directory: str, assignment_name: str, file_name: typing.Union[str, None], file_extension: typing.Union[str, None], *args, **kwargs) -> list:
@@ -259,7 +259,7 @@ def applyFuncDirectory(func, directory: str, assignment_name: str, file_name: ty
                                 output.append(func(fullPath, studentID, *args, **kwargs))
                             except Exception as e:
                                 print("ERROR: Something is wrong with: " + str(studentID))
-                                print(e, file=sys.stderr)
+                                print(repr(e), file=sys.stderr)
     return output
 
 
