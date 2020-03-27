@@ -3,11 +3,13 @@
 - clone repository
 - python setup.py sdist
 - pip install dist/nbhelper-\<VERSION\>.tar.gz
+
 I probably won't add this to PyPI myself since it lacks polish and have no plans to update or maintain it outside of when I am using it, that being said, I don't see any of the functionality here breaking anytime soon.
 ## Usage
 Override settings
 - use these to change directories if you aren't using the default directory structure of nbgrader
 - use ***select*** to perform a check or fix only on specific students
+
 Fixing notebooks
 - if you forgot to make your notebook into an assignment before releasing or have answers without nbgrader metadata (try not to do this!), use ***add***
 - if you want to add extra test cells after releasing an assignment (you're better off adding empty test cells just in case and modifying them later), use ***add***
@@ -16,15 +18,19 @@ Fixing notebooks
 - if there are still issues with the students notebook, use ***rmcells*** to remove everything not specifically part of the assignment
 - if the notebook still won't autograde, use ***forcegrade*** (these won't appear in gradebook.db and feedback won't be generated from them)
 - if you are having permission issues, use ***chmod*** (convenient wrapper to run chmod on all submissions)
+
 Getting grades
 - use the arguments under ***notebook checks*** after running nbgrader autograde and generate_feedback
+
 Emailing feedback
 - if you don't have an exchange setup, or your university has a policy against students viewing the grades and feedback of others (the feedback exchange is not private)
 - use ***zip*** to collect all feedbacks
 - use ***ckdir*** to test your command and folder structure
 - replace ***ckdir*** with ***email*** in your command and follow the prompts
+
 Backing up
 - REMEMBER TO BACKUP YOUR NOTEBOOKS REGULARLY with ***backup***, submitted and source are most important
+
 Deprecated features
 - these probably still work, but aren't really useful
 ## Command Line Interface
