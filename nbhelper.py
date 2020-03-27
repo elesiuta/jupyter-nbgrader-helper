@@ -800,6 +800,7 @@ def main():
     group2 = parser.add_argument_group("notebook fixes", "")
     group3 = parser.add_argument_group("notebook checks", "")
     group4 = parser.add_argument_group("notebook management", "")
+    group5 = parser.add_argument_group("deprecated features", "")
     group1.add_argument("--cdir", type=str, metavar="path", default=os.getcwd(), dest="cdir",
                         help="Override path to course_dir (default: current directory)")
     group1.add_argument("--sdir", type=str, metavar="path", default=None, dest="sdir",
@@ -820,7 +821,7 @@ def main():
                         help="MAKE SURE YOU BACKUP FIRST - Removes all student cells that do not have a grade_id that matches the source notebook (and sorts the ones that do) - this function is destructive and should be used as a last resort")
     group1.add_argument("--select", type=str, metavar="StudentID", nargs="+", default=None,
                         help="Select specific students to fix their notebooks without having to run on the entire class (WARNING: moves student(s) to <course_dir>/nbhelper-select-tmp then moves back unless an error was encountered)")
-    group3.add_argument("--info", type=str, metavar="AssignName",
+    group5.add_argument("--info", type=str, metavar="AssignName",
                         help="Get some quick info (student id, file size, cell count, total execution count, [grade id : execution count]) of all submissions and writes to <course_dir>/reports/<AssignName>/info-<NbName>.csv")
     group3.add_argument("--moss", type=str, metavar="AssignName",
                         help="Exports student answer cells as files and optionally check with moss using <course_dir>/moss/moss.pl")
@@ -836,7 +837,7 @@ def main():
                         help="Check <course_dir>/feedback directory (change with --odir) by printing studentIDs and matching files to make sure it is structured properly")
     group3.add_argument("--ckgrades", type=str, metavar="AssignName",
                         help="Checks for consistency between 'nbgrader export', 'dist', and 'fdist', and writes grades to <course_dir>/reports/<AssignName>/grades-<NbName>.csv")
-    group3.add_argument("--ckdup", type=str, metavar="NbName.extension",
+    group5.add_argument("--ckdup", type=str, metavar="NbName.extension",
                         help="Checks all submitted directories for NbName.extension and reports subfolders containing multiple files of the same extension")
     group2.add_argument("--chmod", type=str, metavar=("rwx", "AssignName"), nargs=2,
                         help="Run chmod rwx on all submissions for an assignment (linux only)")

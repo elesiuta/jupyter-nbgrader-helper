@@ -1,5 +1,33 @@
 # jupyter-nbgrader-helper
-
+## Installation
+- clone repository
+- python setup.py sdist
+- pip install dist/nbhelper-\<VERSION\>.tar.gz
+I probably won't add this to PyPI myself since it lacks polish and have no plans to update or maintain it outside of when I am using it, that being said, I don't see any of the functionality here breaking anytime soon.
+## Usage
+Override settings
+- use these to change directories if you aren't using the default directory structure of nbgrader
+- use ***select*** to perform a check or fix only on specific students
+Fixing notebooks
+- if you forgot to make your notebook into an assignment before releasing or have answers without nbgrader metadata (try not to do this!), use ***add***
+- if you want to add extra test cells after releasing an assignment (you're better off adding empty test cells just in case and modifying them later), use ***add***
+- if nbgrader autograde is complaining about test case points or duplicate grade_ids, use ***fix*** (and instruct students not to mess with cells)
+- if there are other metadata issues with cells, use ***meta*** to fix assignment cells with the correct metadata from the source
+- if there are still issues with the students notebook, use ***rmcells*** to remove everything not specifically part of the assignment
+- if the notebook still won't autograde, use ***forcegrade*** (these won't appear in gradebook.db and feedback won't be generated from them)
+- if you are having permission issues, use ***chmod*** (convenient wrapper to run chmod on all submissions)
+Getting grades
+- use the arguments under ***notebook checks*** after running nbgrader autograde and generate_feedback
+Emailing feedback
+- if you don't have an exchange setup, or your university has a policy against students viewing the grades and feedback of others (the feedback exchange is not private)
+- use ***zip*** to collect all feedbacks
+- use ***ckdir*** to test your command and folder structure
+- replace ***ckdir*** with ***email*** in your command and follow the prompts
+Backing up
+- REMEMBER TO BACKUP YOUR NOTEBOOKS REGULARLY with ***backup***, submitted and source are most important
+Deprecated features
+- these probably still work, but aren't really useful
+## Command Line Interface
 ```
 usage: nbhelper.py [-h] [--nbhelp]
                    [--cdir path] [--sdir path] [--odir path]
@@ -31,11 +59,22 @@ where nbgrader_step = source|release|submitted|autograded|feedback
 optional arguments:
   -h, --help            show this help message and exit
   --nbhelp              READ THIS FIRST
+
+override settings:
+
   --cdir path           Override path to course_dir (default: current
                         directory)
   --sdir path           Override path to source directory
   --odir path           Override path to the submitted, autograded, or
                         feedback directory
+  --select StudentID [StudentID ...]
+                        Select specific students to fix their notebooks
+                        without having to run on the entire class (WARNING:
+                        moves student(s) to <course_dir>/nbhelper-select-tmp
+                        then moves back unless an error was encountered)
+
+notebook fixes:
+
   --add AssignName NbName.ipynb
                         Add missing nbgrader cell metadata and test cells to
                         submissions using the corresponding file in source as
@@ -71,15 +110,12 @@ optional arguments:
                         that do not have a grade_id that matches the source
                         notebook (and sorts the ones that do) - this function
                         is destructive and should be used as a last resort
-  --select StudentID [StudentID ...]
-                        Select specific students to fix their notebooks
-                        without having to run on the entire class (WARNING:
-                        moves student(s) to <course_dir>/nbhelper-select-tmp
-                        then moves back unless an error was encountered)
-  --info AssignName     Get some quick info (student id, file size, cell
-                        count, total execution count, [grade id : execution
-                        count]) of all submissions and writes to
-                        <course_dir>/reports/<AssignName>/info-<NbName>.csv
+  --chmod rwx AssignName
+                        Run chmod rwx on all submissions for an assignment
+                        (linux only)
+
+notebook checks:
+
   --moss AssignName     Exports student answer cells as files and optionally
                         check with moss using <course_dir>/moss/moss.pl
   --getmoss             Downloads moss script with your userid to
@@ -91,9 +127,6 @@ optional arguments:
                         feedback (factoring in manual grading) and writes each
                         student's results to
                         <course_dir>/reports/<AssignName>/fdist-<NbName>.csv
-  --email AssignName|zip NbName.html|feedback.zip
-                        Email feedback to students (see EMAIL_CONFIG in
-                        script, prompts for unset fields)
   --ckdir AssignName NbName.extension
                         Check <course_dir>/feedback directory (change with
                         --odir) by printing studentIDs and matching files to
@@ -102,13 +135,12 @@ optional arguments:
                         Checks for consistency between 'nbgrader export',
                         'dist', and 'fdist', and writes grades to
                         <course_dir>/reports/<AssignName>/grades-<NbName>.csv
-  --ckdup NbName.extension
-                        Checks all submitted directories for NbName.extension
-                        and reports subfolders containing multiple files of
-                        the same extension
-  --chmod rwx AssignName
-                        Run chmod rwx on all submissions for an assignment
-                        (linux only)
+
+notebook management:
+
+  --email AssignName|zip NbName.html|feedback.zip
+                        Email feedback to students (see EMAIL_CONFIG in
+                        script, prompts for unset fields)
   --avenue-collect submissions.zip AssignName
                         Basically zip collect but tailored to avenue (LMS by
                         D2L), uses <course_dir>/classlist.csv to lookup
@@ -123,4 +155,16 @@ optional arguments:
   --backup nbgrader_step
                         Backup nbgrader_step directory to
                         <course_dir>/backups/<nbgrader_step-mm-dd-hh-mm>.zip
+
+deprecated features:
+
+  --info AssignName     Get some quick info (student id, file size, cell
+                        count, total execution count, [grade id : execution
+                        count]) of all submissions and writes to
+                        <course_dir>/reports/<AssignName>/info-<NbName>.csv
+  --ckdup NbName.extension
+                        Checks all submitted directories for NbName.extension
+                        and reports subfolders containing multiple files of
+                        the same extension
+
  ```
