@@ -48,7 +48,7 @@ import re
 
 ####### Config #######
 
-VERSION = "0.2.16"
+VERSION = "0.2.17"
 
 EMAIL_CONFIG = {
     "CC_ADDRESS": None, # "ccemail@domain.com" or SELF to cc MY_EMAIL_ADDRESS
@@ -796,53 +796,57 @@ def main():
     parser = argparse.ArgumentParser(description=readme)
     parser.add_argument("--nbhelp", action="store_true",
                         help="READ THIS FIRST")
-    parser.add_argument("--cdir", type=str, metavar="path", default=os.getcwd(), dest="cdir",
+    group1 = parser.add_argument_group("override settings", "")
+    group2 = parser.add_argument_group("notebook fixes", "")
+    group3 = parser.add_argument_group("notebook checks", "")
+    group4 = parser.add_argument_group("notebook management", "")
+    group1.add_argument("--cdir", type=str, metavar="path", default=os.getcwd(), dest="cdir",
                         help="Override path to course_dir (default: current directory)")
-    parser.add_argument("--sdir", type=str, metavar="path", default=None, dest="sdir",
+    group1.add_argument("--sdir", type=str, metavar="path", default=None, dest="sdir",
                         help="Override path to source directory")
-    parser.add_argument("--odir", type=str, metavar="path", default=None, dest="odir",
+    group1.add_argument("--odir", type=str, metavar="path", default=None, dest="odir",
                         help="Override path to the submitted, autograded, or feedback directory")
-    parser.add_argument("--add", type=str, metavar=("AssignName", "NbName.ipynb"), nargs=2,
+    group2.add_argument("--add", type=str, metavar=("AssignName", "NbName.ipynb"), nargs=2,
                         help="Add missing nbgrader cell metadata and test cells to submissions using the corresponding file in source as a template by matching function names (python only), template must be updated with nbgrader cells")
-    parser.add_argument("--fix", type=str, metavar=("AssignName", "NbName.ipynb"), nargs=2,
+    group2.add_argument("--fix", type=str, metavar=("AssignName", "NbName.ipynb"), nargs=2,
                         help="Update test points by using the corresponding file in source as a template and matching the cell's grade_id, also combines duplicate grade_ids")
-    parser.add_argument("--meta", type=str, metavar=("AssignName", "NbName.ipynb"), nargs=2,
+    group2.add_argument("--meta", type=str, metavar=("AssignName", "NbName.ipynb"), nargs=2,
                         help="Fix cell metadata by replacing with that of source, matches based on grade_id")
-    parser.add_argument("--forcegrade", type=str, metavar=("AssignName", "NbName.ipynb"), nargs=2,
+    group2.add_argument("--forcegrade", type=str, metavar=("AssignName", "NbName.ipynb"), nargs=2,
                         help="For particularly troublesome student notebooks that fail so badly they don't even autograde or produce proper error messages (you should run this command with --select), this partially does autograders job: combines the hidden test cases with the submission but places it in <course_dir>/nbhelper-autograde/<student_id>/<AssignName>/<NbName.ipynb> then tries executing it via command line. You can also run and test this notebook yourself, then move this 'autograded' notebook to the autograded directory and use --dist to 'grade' it (make sure failed tests retain their errors or they'll count as 'correct', grades are not entered in gradebook.db)")
-    parser.add_argument("--sortcells", type=str, metavar=("AssignName", "NbName.ipynb"), nargs=2,
+    group2.add_argument("--sortcells", type=str, metavar=("AssignName", "NbName.ipynb"), nargs=2,
                         help="Sort cells of student notebooks to match order of source, matches based on grade_id, non grade_id cells are placed at the end")
-    parser.add_argument("--rmcells", type=str, metavar=("AssignName", "NbName.ipynb"), nargs=2,
+    group2.add_argument("--rmcells", type=str, metavar=("AssignName", "NbName.ipynb"), nargs=2,
                         help="MAKE SURE YOU BACKUP FIRST - Removes all student cells that do not have a grade_id that matches the source notebook (and sorts the ones that do) - this function is destructive and should be used as a last resort")
-    parser.add_argument("--select", type=str, metavar="StudentID", nargs="+", default=None,
+    group1.add_argument("--select", type=str, metavar="StudentID", nargs="+", default=None,
                         help="Select specific students to fix their notebooks without having to run on the entire class (WARNING: moves student(s) to <course_dir>/nbhelper-select-tmp then moves back unless an error was encountered)")
-    parser.add_argument("--info", type=str, metavar="AssignName",
+    group3.add_argument("--info", type=str, metavar="AssignName",
                         help="Get some quick info (student id, file size, cell count, total execution count, [grade id : execution count]) of all submissions and writes to <course_dir>/reports/<AssignName>/info-<NbName>.csv")
-    parser.add_argument("--moss", type=str, metavar="AssignName",
+    group3.add_argument("--moss", type=str, metavar="AssignName",
                         help="Exports student answer cells as files and optionally check with moss using <course_dir>/moss/moss.pl")
-    parser.add_argument("--getmoss", action="store_true",
+    group3.add_argument("--getmoss", action="store_true",
                         help="Downloads moss script with your userid to <course_dir>/moss/moss.pl then removes it after use")
-    parser.add_argument("--dist", type=str, metavar="AssignName",
+    group3.add_argument("--dist", type=str, metavar="AssignName",
                         help="Gets distribution of scores across test cells from autograded notebooks and writes each student's results to <course_dir>/reports/<AssignName>/dist-<NbName>.csv")
-    parser.add_argument("--fdist", type=str, metavar="AssignName",
+    group3.add_argument("--fdist", type=str, metavar="AssignName",
                         help="Gets distribution of scores across test cells from feedback (factoring in manual grading) and writes each student's results to <course_dir>/reports/<AssignName>/fdist-<NbName>.csv")
-    parser.add_argument("--email", type=str, metavar=("AssignName|zip", "NbName.html|feedback.zip"), nargs=2,
+    group4.add_argument("--email", type=str, metavar=("AssignName|zip", "NbName.html|feedback.zip"), nargs=2,
                         help="Email feedback to students (see EMAIL_CONFIG in script, prompts for unset fields)")
-    parser.add_argument("--ckdir", type=str, metavar=("AssignName", "NbName.extension"), nargs=2,
+    group3.add_argument("--ckdir", type=str, metavar=("AssignName", "NbName.extension"), nargs=2,
                         help="Check <course_dir>/feedback directory (change with --odir) by printing studentIDs and matching files to make sure it is structured properly")
-    parser.add_argument("--ckgrades", type=str, metavar="AssignName",
+    group3.add_argument("--ckgrades", type=str, metavar="AssignName",
                         help="Checks for consistency between 'nbgrader export', 'dist', and 'fdist', and writes grades to <course_dir>/reports/<AssignName>/grades-<NbName>.csv")
-    parser.add_argument("--ckdup", type=str, metavar="NbName.extension",
+    group3.add_argument("--ckdup", type=str, metavar="NbName.extension",
                         help="Checks all submitted directories for NbName.extension and reports subfolders containing multiple files of the same extension")
-    parser.add_argument("--chmod", type=str, metavar=("rwx", "AssignName"), nargs=2,
+    group2.add_argument("--chmod", type=str, metavar=("rwx", "AssignName"), nargs=2,
                         help="Run chmod rwx on all submissions for an assignment (linux only)")
-    parser.add_argument("--avenue-collect", dest="avenue_collect", type=str, metavar=("submissions.zip", "AssignName"), nargs=2,
+    group4.add_argument("--avenue-collect", dest="avenue_collect", type=str, metavar=("submissions.zip", "AssignName"), nargs=2,
                         help="Basically zip collect but tailored to avenue (LMS by D2L), uses <course_dir>/classlist.csv to lookup Student IDs using names from submissions, overwrites submissions in submitted directory, backup first!")
-    parser.add_argument("--zip", type=str, metavar="AssignName", nargs="+",
+    group4.add_argument("--zip", type=str, metavar="AssignName", nargs="+",
                         help="Combine multiple feedbacks into <course_dir>/feedback/<student_id>/zip/feedback.zip")
-    parser.add_argument("--zipfiles", type=str, metavar="NbName.html", nargs="+",
+    group4.add_argument("--zipfiles", type=str, metavar="NbName.html", nargs="+",
                         help="Same as zip but matches files instead of assignment folders")
-    parser.add_argument("--backup", type=str, metavar="nbgrader_step", choices=["autograded","feedback","release","source","submitted"],
+    group4.add_argument("--backup", type=str, metavar="nbgrader_step", choices=["autograded","feedback","release","source","submitted"],
                         help="Backup nbgrader_step directory to <course_dir>/backups/<nbgrader_step-mm-dd-hh-mm>.zip")
     args = parser.parse_args()
 
