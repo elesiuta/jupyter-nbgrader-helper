@@ -86,7 +86,7 @@ https://nbgrader.readthedocs.io/en/stable/command_line_tools/index.html
 4.a) release assignment through formgrader if using JupyterHub (places the generated student version from release in the outbound exchange folder)
 4.b) if you wish to modify existing cells in the assignment that students should see, they will need to refetch it (not necessary for HIDDEN cells)
 4.c) if you wish to add or delete answer/test cells, you'll need the workaround below, and have students refetch the assignment or rely on the notebook fixes here
-4.d) collect assignments submitted through JupyterHub (inbound excchange folder, students can write, not read) using formgrader (or use zip collect for external)
+4.d) collect assignments submitted through JupyterHub (inbound exchange folder, students can write, not read) using formgrader (or use zip collect for external)
 5. Autgrading and Feedback
 $ nbgrader autograde "assignment_name" # warning: only run the autograder in restricted environments and backup submissions first
 $ nbgrader generate_feedback "assignment_name" # do not release, uses non-private outbound exchange folder (all students can read)
