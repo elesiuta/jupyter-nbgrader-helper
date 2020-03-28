@@ -48,7 +48,7 @@ import re
 
 ####### Config #######
 
-VERSION = "0.2.17"
+VERSION = "0.2.18"
 
 EMAIL_CONFIG = {
     "CC_ADDRESS": None, # "ccemail@domain.com" or SELF to cc MY_EMAIL_ADDRESS
@@ -1243,6 +1243,7 @@ def main():
         student_dir = getStudentFileDir(COURSE_DIR, args.odir, "submitted")
         tmp_dir = os.path.join(COURSE_DIR, "nbhelper-avenue-tmp")
         classlist = os.path.join(COURSE_DIR, "classlist.csv")
+        assignment_notebooks = glob.glob(os.path.join(SOURCE_DIR, assign_name, "*.ipynb"))
 
         # create lookup dictionary for students
         # use same column names as 'nbgrader db student import' (requires id, first_name, last_name)
@@ -1267,8 +1268,10 @@ def main():
                 log.append([submission])
                 student_name = submission.split(" - ")[1]
                 student_id = student_dictionary[student_name]
-                # file_name = submission.split(" - ")[-1]
-                file_name = "%s.ipynb" %(assign_name)
+                if len(assignment_notebooks) == 1 and os.path.splitext(submission)[-1] == ".ipynb":
+                    file_name = assignment_notebooks[0]
+                else:
+                    file_name = submission.split(" - ")[-1]
                 current_path = os.path.join(tmp_dir, submission)
                 new_path = os.path.join(student_dir, student_id, assign_name, file_name)
                 if not os.path.isdir(os.path.dirname(new_path)):

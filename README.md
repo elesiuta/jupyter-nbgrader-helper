@@ -4,7 +4,7 @@
 - python setup.py sdist
 - pip install dist/nbhelper-\<VERSION\>.tar.gz
 
-I probably won't add this to PyPI myself since it lacks polish and have no plans to update or maintain it outside of when I am using it, that being said, I don't see any of the functionality here breaking anytime soon.
+I probably won't add this to PyPI since it lacks polish and have no plans to update or maintain it outside of when I am using it, that being said, I don't see any of the functionality here breaking anytime soon.
 ## Usage
 Override settings
 - use these to change directories if you aren't using the default directory structure of nbgrader
