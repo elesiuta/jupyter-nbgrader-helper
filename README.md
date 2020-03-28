@@ -23,7 +23,7 @@ Getting grades
 - use the arguments under ***notebook checks*** after running nbgrader autograde and generate_feedback
 
 Emailing feedback
-- if you don't have an exchange setup, or your university has a policy against students viewing the grades and feedback of others (the feedback exchange is not private)
+- if you don't have an exchange setup, or your university has a policy against students viewing the grades and feedback of others (nbgrader release_feedback uses the outbound exchange which all students have read permission for)
 - use ***zip*** to collect all feedbacks
 - use ***ckdir*** to test your command and folder structure
 - replace ***ckdir*** with ***email*** in your command and follow the prompts

@@ -82,12 +82,14 @@ https://nbgrader.readthedocs.io/en/stable/command_line_tools/index.html
 2.b) convert notebook into assignment with View -> Cell Toolbar -> Create Assignment
 2.c) mark necessary cells as 'Manually graded answer', 'Autograded answer', 'Autograder tests', and 'Read-only'
 3.a) validate the source notebook(s) then generate the student version of the notebook(s) (can be done through formgrader)
-4.a) after releasing, only hidden test cells can be modified without workarounds or students refetching the assignment
-4.b) release assignment through formgrader if using JupyterHub (places the generated student version in the outbound exchange folder)
-4.c) collect assignments submitted through JupyterHub using formgrader (or use zip collect for external)
+3.b) at this point, existing cells can only be modified (answer and test cells cannot be created or deleted, IDs cannot be changed)
+4.a) release assignment through formgrader if using JupyterHub (places the generated student version from release in the outbound exchange folder)
+4.b) if you wish to modify existing cells in the assignment that students should see, they will need to refetch it (not necessary for HIDDEN cells)
+4.c) if you wish to add or delete answer/test cells, you'll need the workaround below, and have students refetch the assignment or rely on the notebook fixes here
+4.d) collect assignments submitted through JupyterHub (inbound excchange folder, students can write, not read) using formgrader (or use zip collect for external)
 5. Autgrading and Feedback
 $ nbgrader autograde "assignment_name" # warning: only run the autograder in restricted environments and backup submissions first
-$ nbgrader generate_feedback "assignment_name" # just feedback in <0.6.0 (do not release, uses non-private outbound exchange folder)
+$ nbgrader generate_feedback "assignment_name" # do not release, uses non-private outbound exchange folder (all students can read)
 $ nbgrader export # exports grades as a csv file
 
 --Workaround for getting errors on assignment source edits made after submissions received--
