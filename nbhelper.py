@@ -77,20 +77,23 @@ https://nbgrader.readthedocs.io/en/stable/command_line_tools/index.html
 # summary of steps
 0.a) make sure the nbgrader toolbar and formgrader extensions are enabled (most actions can be performed from here)
 0.b) otherwise, run all commands from the "course_directory"
-1.a) create the assignment using formgrader
+1. create the assignment using formgrader
 2.a) create and edit the notebook(s) and any other files in source/assignment_name
 2.b) convert notebook into assignment with View -> Cell Toolbar -> Create Assignment
 2.c) mark necessary cells as 'Manually graded answer', 'Autograded answer', 'Autograder tests', and 'Read-only'
 3.a) validate the source notebook(s) then generate the student version of the notebook(s) (can be done through formgrader)
-3.b) at this point, existing cells can only be modified (answer and test cells cannot be created or deleted, IDs cannot be changed)
-4.a) release assignment through formgrader if using JupyterHub (places the generated student version from release in the outbound exchange folder)
-4.b) if you wish to modify existing cells in the assignment that students should see, they will need to refetch it (not necessary for HIDDEN cells)
-4.c) if you wish to add or delete answer/test cells, you'll need the workaround below, and have students refetch the assignment or rely on the notebook fixes here
-4.d) collect assignments submitted through JupyterHub (inbound exchange folder, students can write, not read) using formgrader (or use zip collect for external)
-5. Autgrading and Feedback
+3.b) see next section if you wish to make changes to the assignment after this point
+4. release assignment through formgrader if using JupyterHub (places the generated student version from release in the outbound exchange folder)
+5. collect assignments submitted through JupyterHub (inbound exchange folder, students can write, not read) using formgrader (or use zip collect for external)
+6. Autgrading and Feedback
 $ nbgrader autograde "assignment_name" # warning: only run the autograder in restricted environments and backup submissions first
 $ nbgrader generate_feedback "assignment_name" # do not release, uses non-private outbound exchange folder (all students can read)
 $ nbgrader export # exports grades as a csv file
+
+--Making changes assignments after being released (or collected, or autograded!)--
+1. if you wish to modify existing test cases, just make the modifications in source and regenerate the notebook
+2. if you wish to modify existing cells in the assignment that students should see, return to step 3, students will need to refetch it
+3. if you wish to add or delete test/answer cells, or change cell type/metadata, you'll need the workaround in the next section, and have students refetch the assignment or rely on the notebook fixes here
 
 --Workaround for getting errors on assignment source edits made after submissions received--
 https://github.com/jupyter/nbgrader/issues/1069
