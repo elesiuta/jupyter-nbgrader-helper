@@ -48,7 +48,7 @@ import re
 
 ####### Config #######
 
-VERSION = "0.2.18"
+VERSION = "0.2.19"
 
 EMAIL_CONFIG = {
     "CC_ADDRESS": None, # "ccemail@domain.com" or SELF to cc MY_EMAIL_ADDRESS
@@ -1274,7 +1274,7 @@ def main():
                 student_name = submission.split(" - ")[1]
                 student_id = student_dictionary[student_name]
                 if len(assignment_notebooks) == 1 and os.path.splitext(submission)[-1] == ".ipynb":
-                    file_name = assignment_notebooks[0]
+                    file_name = os.path.basename(assignment_notebooks[0])
                 else:
                     file_name = submission.split(" - ")[-1]
                 current_path = os.path.join(tmp_dir, submission)
