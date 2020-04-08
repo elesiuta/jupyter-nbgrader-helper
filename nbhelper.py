@@ -48,7 +48,7 @@ import re
 
 ####### Config #######
 
-VERSION = "0.2.19"
+VERSION = "0.2.20"
 
 EMAIL_CONFIG = {
     "CC_ADDRESS": None, # "ccemail@domain.com" or SELF to cc MY_EMAIL_ADDRESS
@@ -600,6 +600,36 @@ def updateCellsMeta(template: dict, student: dict, student_id: str = "") -> typi
         print("No changes made for:     " + student_id)
         return None
 
+def makeNotebook(fullPath: str, student_id: str, source_notebook: str):
+    with open(fullPath, "r") as f:
+        student_code = f.readlines()
+    new_student_path = os.path.join(os.path.dirname(fullPath), os.path.basename(source_notebook))
+    sourceNB = readJson(source_notebook)
+    student_cells = []
+    added_student_code = False
+    for cell in sourceNB["cells"]:
+        try:
+            # answer cell
+            if cell["metadata"]["nbgrader"]["locked"] == False:
+                if not added_student_code:
+                    cell["source"] = student_code
+                    added_student_code = True
+                else:
+                    cell["source"] = [""]
+                student_cells.append(cell)
+            # test cell
+            elif cell["metadata"]["nbgrader"]["locked"] == True:
+                student_cells.append(cell)
+        except:
+            pass
+    studentNB = {}
+    for key in sourceNB:
+        studentNB[key] = sourceNB[key]
+    studentNB["cells"] = student_cells
+    writeJson(new_student_path, studentNB)
+    print("Created notebook for:  " + student_id)
+    return [student_id, 1]
+
 def forceAutograde(template: dict, student: dict, student_id: str = "", course_dir = None, AssignName = None, NbNameipynb = None) -> typing.Union[dict, None]:
     for cell in template["cells"]:
         try:
@@ -828,6 +858,8 @@ def main():
                         help="Select specific students to fix their notebooks without having to run on the entire class (WARNING: moves student(s) to <course_dir>/nbhelper-select-tmp then moves back unless an error was encountered)")
     group5.add_argument("--info", type=str, metavar="AssignName",
                         help="Get some quick info (student id, file size, cell count, total execution count, [grade id : execution count]) of all submissions and writes to <course_dir>/reports/<AssignName>/info-<NbName>.csv")
+    group5.add_argument("--mknb", type=str, metavar=("AssignName", "NbName.ipynb", "FileName.extension"), nargs=3,
+                        help="Try and make an autogradable notebook from a plain source code file by cramming everything in the first answer cell then appending all the test cells")
     group3.add_argument("--moss", type=str, metavar="AssignName",
                         help="Exports student answer cells as files and optionally check with moss using <course_dir>/moss/moss.pl")
     group3.add_argument("--getmoss", action="store_true",
@@ -957,6 +989,14 @@ def main():
         # else:
         #     delete = "n"
         applyTemplateSubmissions(removeNonEssentialCells, template_path, student_dir, nb_name, assign_name, delete="n")
+        print("Done")
+
+    if args.mknb is not None:
+        assign_name, nb_name, fname = args.mknb
+        template_path = os.path.join(SOURCE_DIR, assign_name, nb_name)
+        student_dir = getStudentFileDir(COURSE_DIR, args.odir, "submitted")
+        data = applyFuncDirectory(makeNotebook, student_dir, assign_name, fname, None, template_path)
+        writeCsv(os.path.join(COURSE_DIR, "reports", assign_name, "mknb-" + os.path.splitext(nb_name)[0] + ".csv"), data)
         print("Done")
 
     if args.info is not None:

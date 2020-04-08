@@ -45,6 +45,7 @@ usage: nbhelper.py [-h] [--nbhelp]
                    [--rmcells AssignName NbName.ipynb]
                    [--select StudentID [StudentID ...]]
                    [--info AssignName]
+                   [--mknb AssignName NbName.ipynb FileName.extension]
                    [--moss AssignName] [--getmoss]
                    [--dist AssignName] [--fdist AssignName]
                    [--email AssignName|zip NbName.html|feedback.zip]
@@ -168,6 +169,10 @@ deprecated features:
                         count, total execution count, [grade id : execution
                         count]) of all submissions and writes to
                         <course_dir>/reports/<AssignName>/info-<NbName>.csv
+  --mknb AssignName NbName.ipynb FileName.extension
+                        Try and make an autogradable notebook from a plain
+                        source code file by cramming everything in the first
+                        answer cell then appending all the test cells
   --ckdup NbName.extension
                         Checks all submitted directories for NbName.extension
                         and reports subfolders containing multiple files of
