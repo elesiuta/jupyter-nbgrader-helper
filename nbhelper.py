@@ -48,7 +48,7 @@ import re
 
 ####### Config #######
 
-VERSION = "0.2.24"
+VERSION = "0.2.25"
 
 EMAIL_CONFIG = {
     "CC_ADDRESS": None, # "ccemail@domain.com" or SELF to cc MY_EMAIL_ADDRESS
@@ -732,7 +732,7 @@ def getFeedbackScore(fullPath: str, studentID: str) -> dict:
     for line in source_html:
         match_score = re.search(r'\(Score: ?(\d+\.\d+) ?/ ?(\d+\.\d+)\)', line)
         if match_score:
-            match_test_cell = re.search(r'<li><a href="#(.+?)">Test cell</a> ?\(Score: ?(\d+\.\d+) ?/ ?(\d+\.\d+)\)</li>', line)
+            match_test_cell = re.search(r'<li><a href="#(.+?)">.+?</a> ?\(Score: ?(\d+\.\d+) ?/ ?(\d+\.\d+)\)</li>', line)
             if match_test_cell:
                 grade_id_list.append(match_test_cell.groups()[0])
                 score_list.append(float(match_test_cell.groups()[1]))
