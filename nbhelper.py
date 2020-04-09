@@ -48,7 +48,7 @@ import re
 
 ####### Config #######
 
-VERSION = "0.2.23"
+VERSION = "0.2.24"
 
 EMAIL_CONFIG = {
     "CC_ADDRESS": None, # "ccemail@domain.com" or SELF to cc MY_EMAIL_ADDRESS
@@ -610,7 +610,7 @@ def makeNotebook(fullPath: str, student_id: str, source_notebook: str):
     for cell in sourceNB["cells"]:
         try:
             # answer cell
-            if cell["metadata"]["nbgrader"]["locked"] == False:
+            if cell["metadata"]["nbgrader"]["locked"] == False and ("grade" not in cell["metadata"]["nbgrader"] or cell["metadata"]["nbgrader"]["grade"] == False):
                 if not added_student_code:
                     cell["source"] = student_code
                     added_student_code = True
@@ -618,7 +618,7 @@ def makeNotebook(fullPath: str, student_id: str, source_notebook: str):
                     cell["source"] = [""]
                 student_cells.append(cell)
             # test cell
-            elif cell["metadata"]["nbgrader"]["locked"] == True:
+            elif cell["metadata"]["nbgrader"]["locked"] == True or ("grade" in cell["metadata"]["nbgrader"] and cell["metadata"]["nbgrader"]["grade"] == True):
                 student_cells.append(cell)
         except:
             pass
