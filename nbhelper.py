@@ -48,7 +48,7 @@ import re
 
 ####### Config #######
 
-VERSION = "0.2.22"
+VERSION = "0.2.23"
 
 EMAIL_CONFIG = {
     "CC_ADDRESS": None, # "ccemail@domain.com" or SELF to cc MY_EMAIL_ADDRESS
@@ -436,7 +436,7 @@ def addNbgraderCell(template: dict, student: dict, student_id: str = "") -> typi
     for cell in template["cells"]:
         try:
             # answer cell
-            if cell["metadata"]["nbgrader"]["locked"] == False:
+            if cell["metadata"]["nbgrader"]["locked"] == False and ("grade" not in cell["metadata"]["nbgrader"] or cell["metadata"]["nbgrader"]["grade"] == False):
                 function_name = getFunctionNames(cell["source"])
                 grade_id = cell["metadata"]["nbgrader"]["grade_id"]
                 if function_name == []:
@@ -482,7 +482,7 @@ def addNbgraderCell(template: dict, student: dict, student_id: str = "") -> typi
                     except:
                         pass
                 if found_test_cell == False:
-                    # inset test cells after most recent answer cell
+                    # insert test cells after most recent answer cell
                     student["cells"].insert(last_answer_cell_index + 1, cell)
                     last_answer_cell_index += 1
                     modified = True
