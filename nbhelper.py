@@ -48,7 +48,7 @@ import re
 
 ####### Config #######
 
-VERSION = "0.2.20"
+VERSION = "0.2.21"
 
 EMAIL_CONFIG = {
     "CC_ADDRESS": None, # "ccemail@domain.com" or SELF to cc MY_EMAIL_ADDRESS
@@ -441,7 +441,7 @@ def addNbgraderCell(template: dict, student: dict, student_id: str = "") -> typi
                 grade_id = cell["metadata"]["nbgrader"]["grade_id"]
                 if function_name == []:
                     print("No function found: \n" + str(cell))
-                    break
+                    continue
                 # find student cell with matching grade_id first, then check functions
                 found_student_cell = False
                 for i in range(len(student["cells"])):
