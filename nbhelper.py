@@ -48,7 +48,7 @@ import re
 
 ####### Config #######
 
-VERSION = "0.2.21"
+VERSION = "0.2.22"
 
 EMAIL_CONFIG = {
     "CC_ADDRESS": None, # "ccemail@domain.com" or SELF to cc MY_EMAIL_ADDRESS
@@ -470,7 +470,7 @@ def addNbgraderCell(template: dict, student: dict, student_id: str = "") -> typi
                 if found_student_cell == False:
                     print("Student function not found for: %s - %s" %(student_id, str(function_name)))
             # test cell
-            elif cell["metadata"]["nbgrader"]["locked"] == True and found_student_cell:
+            elif cell["metadata"]["nbgrader"]["locked"] == True or ("grade" in cell["metadata"]["nbgrader"] and cell["metadata"]["nbgrader"]["grade"] == True):
                 # check if test cell already exists
                 grade_id = cell["metadata"]["nbgrader"]["grade_id"]
                 found_test_cell = False
