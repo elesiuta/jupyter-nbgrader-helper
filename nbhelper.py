@@ -48,7 +48,7 @@ import re
 
 ####### Config #######
 
-VERSION = "0.3.1"
+VERSION = "0.3.2"
 
 EMAIL_CONFIG = {
     "CC_ADDRESS": None, # "ccemail@domain.com" or SELF to cc MY_EMAIL_ADDRESS
@@ -381,24 +381,29 @@ def sortStudentCells(template: dict, student: dict, student_id: str = "") -> typ
         return None
     else:
         new_student_cells = []
-        # add all grade_id cells in order
+        add_next_cells = True
+        # add all grade_id cells in order (keeping non grade_id cells in between)
         for grade_id in template_grade_ids:
             found_student_cell = False
             for cell in student["cells"]:
+                # add non grade_id cells in current order (until next grade_id cell is found)
+                if add_next_cells:
+                    try:
+                        if cell["metadata"]["nbgrader"]["grade_id"] != grade_id:
+                            add_next_cells = False
+                    except:
+                        new_student_cells.append(cell)
+                # add matching grade_id cells
                 try:
                     if cell["metadata"]["nbgrader"]["grade_id"] == grade_id:
                         found_student_cell = True
                         new_student_cells.append(cell)
+                        add_next_cells = True
                 except:
                     pass
+            add_next_cells = False
             if not found_student_cell:
                 print("Student: %s is missing test cell: %s" %(student_id, grade_id))
-        # re-add all non id cells to bottom
-        for cell in student["cells"]:
-            try:
-                _ = cell["metadata"]["nbgrader"]["grade_id"]
-            except:
-                new_student_cells.append(cell)
         # return updated notebook (probably still the same object but who cares)
         print("Updated cell order for:  " + student_id)
         student["cells"] = new_student_cells
@@ -581,32 +586,30 @@ def updateCellsMeta(template: dict, student: dict, student_id: str = "") -> typi
             for i in range(len(student["cells"])):
                 try:
                     if student["cells"][i]["metadata"]["nbgrader"]["grade_id"] == grade_id:
-                        # update all the metadata
+                        # fix all the metadata
                         found_student_cell = True
-                        if student["cells"][i]["cell_type"] != cell["cell_type"]:
-                            student["cells"][i]["cell_type"] = cell["cell_type"]
-                            modified = True
-                        if student["cells"][i]["metadata"] != cell["metadata"]:
-                            student["cells"][i]["metadata"] = cell["metadata"]
-                            modified = True
-                        if "outputs" not in student["cells"][i]:
-                            student["cells"][i]["outputs"] = []
-                            modified = True
-                        if "execution_count" not in student["cells"][i]:
-                            student["cells"][i]["execution_count"] = 0
-                            modified = True
-                        # for key in student["cells"][i]:
-                        #     # remove unknown metadata
-                        #     if key not in cell:
-                        #         _ = student["cells"][i].pop(key)
-                        #         modified = True
-                        if cell.keys() != student["cells"][i].keys():
+                        try:
+                            if cell.keys() != student["cells"][i].keys():
+                                raise Exception("Fix metadata")
+                            for key in cell:
+                                if key not in ["outputs", "execution_count", "source"]:
+                                    if cell[key] != student["cells"][i][key]:
+                                        raise Exception("Fix metadata")
+                            if "outputs" not in student["cells"][i] or type(student["cells"][i]["outputs"]) not in [list, str]:
+                                student["cells"][i]["outputs"] = []
+                                modified = True
+                            if "execution_count" not in student["cells"][i] or type(student["cells"][i]["execution_count"]) != int:
+                                student["cells"][i]["execution_count"] = 0
+                                modified = True
+                        except:
                             # create a new cell and preserve source
-                            # maybe should just use this all the time
-                            new_cell = cell.copy()
-                            new_cell["source"] = student["cells"][i]["source"]
-                            student["cells"][i] = new_cell
-                            modified = True
+                            try:
+                                new_cell = cell.copy()
+                                new_cell["source"] = student["cells"][i]["source"]
+                                student["cells"][i] = new_cell
+                                modified = True
+                            except:
+                                print("ERROR: Could not fix metadata for student: %s grade_id: %s" %(student_id, grade_id))
                 except:
                     pass
             if not found_student_cell:
@@ -901,7 +904,7 @@ def main():
     group2.add_argument("--forcegrade", type=str, metavar=("AssignName", "NbName.ipynb"), nargs=2,
                         help="For particularly troublesome student notebooks that fail so badly they don't even autograde or produce proper error messages (you should run this command with --select), this partially does autograders job: combines the hidden test cases with the submission but places it in <course_dir>/nbhelper-autograde/<student_id>/<AssignName>/<NbName.ipynb> then tries executing it via command line. You can also run and test this notebook yourself, then move this 'autograded' notebook to the autograded directory and use --dist to 'grade' it (make sure failed tests retain their errors or they'll count as 'correct', grades are not entered in gradebook.db)")
     group2.add_argument("--sortcells", type=str, metavar=("AssignName", "NbName.ipynb"), nargs=2,
-                        help="Sort cells of student notebooks to match order of source, matches based on grade_id, non grade_id cells are placed at the end")
+                        help="Sort cells of student notebooks to match order of source, matches based on grade_id")
     group2.add_argument("--rmcells", type=str, metavar=("AssignName", "NbName.ipynb"), nargs=2,
                         help="MAKE SURE YOU BACKUP FIRST - Removes all student cells that do not have a grade_id that matches the source notebook (and sorts the ones that do) - this function is destructive and should be used as a last resort")
     group1.add_argument("--select", type=str, metavar="StudentID", nargs="+", default=None,

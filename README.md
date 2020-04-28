@@ -110,8 +110,7 @@ notebook fixes:
                         grades are not entered in gradebook.db)
   --sortcells AssignName NbName.ipynb
                         Sort cells of student notebooks to match order of
-                        source, matches based on grade_id, non grade_id cells
-                        are placed at the end
+                        source, matches based on grade_id
   --rmcells AssignName NbName.ipynb
                         MAKE SURE YOU BACKUP FIRST - Removes all student cells
                         that do not have a grade_id that matches the source
