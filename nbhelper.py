@@ -48,7 +48,7 @@ import re
 
 ####### Config #######
 
-VERSION = "0.3.3"
+VERSION = "0.3.4"
 
 EMAIL_CONFIG = {
     "CC_ADDRESS": None, # "ccemail@domain.com" or SELF to cc MY_EMAIL_ADDRESS
@@ -355,6 +355,15 @@ def list2dict(list_of_dicts: list, unique_key: str):
         new_dict[d[unique_key]] = d
     return new_dict
 
+def sortedJson(json: typing.Union[dict, list]):
+    # also sorts lists unlike json.dumps sort_keys=True
+    if type(json) is dict:
+        return sorted((k, sortedJson(v)) for k, v in json.items())
+    elif type(json) is list:
+        return sorted(sortedJson(e) for e in json)
+    else:
+        return json
+
 
 ####### Main functions #######
 
@@ -585,26 +594,22 @@ def updateCellsMeta(template: dict, student: dict, student_id: str = "") -> typi
             found_student_cell = False
             for i in range(len(student["cells"])):
                 try:
-                    # fix all the metadata
                     if student["cells"][i]["metadata"]["nbgrader"]["grade_id"] == grade_id:
                         found_student_cell = True
-                        # compare student metadata with source (comment out or exclude parts with if key not in[] for more leniency)
                         try:
-                            # cell top level metadata
-                            if cell.keys() != student["cells"][i].keys():
+                            # compare student metadata with source
+                            if sorted(cell.keys()) != sorted(student["cells"][i].keys()):
                                 raise Exception("Fix metadata")
                             for key in cell:
-                                if key not in ["outputs", "execution_count", "source"]:
-                                    if cell[key] != student["cells"][i][key]:
+                                if key == "outputs" and type(student["cells"][i]["outputs"]) not in [list, str]:
+                                    student["cells"][i]["outputs"] = []
+                                    modified = True
+                                elif key == "execution_count" and type(student["cells"][i]["execution_count"]) not in [int, type(None)]:
+                                    student["cells"][i]["execution_count"] = 0
+                                    modified = True
+                                elif key != "source":
+                                    if sortedJson(cell[key]) != sortedJson(student["cells"][i][key]):
                                         raise Exception("Fix metadata")
-                            # cell["metadata"] metadata
-                            for key in cell["metadata"]:
-                                if cell["metadata"][key] != student["cells"][i]["metadata"][key]:
-                                    raise Exception("Fix metadata")
-                            # cell["metadata"]["nbgrader"] metadata
-                            for key in cell["metadata"]["nbgrader"]:
-                                if cell["metadata"]["nbgrader"][key] != student["cells"][i]["metadata"]["nbgrader"][key]:
-                                    raise Exception("Fix metadata")
                         except:
                             # create a new cell and preserve source (just run this for every cell if metadata mistakes aren't being caught)
                             try:
@@ -614,13 +619,6 @@ def updateCellsMeta(template: dict, student: dict, student_id: str = "") -> typi
                                 modified = True
                             except:
                                 print("ERROR: Could not fix metadata for student: %s grade_id: %s" %(student_id, grade_id))
-                        # remaining cell top level metadata
-                        if "outputs" not in student["cells"][i] or type(student["cells"][i]["outputs"]) not in [list, str]:
-                            student["cells"][i]["outputs"] = []
-                            modified = True
-                        if "execution_count" not in student["cells"][i] or type(student["cells"][i]["execution_count"]) not in [int, type(None)]:
-                            student["cells"][i]["execution_count"] = 0
-                            modified = True
                 except:
                     pass
             if not found_student_cell:
