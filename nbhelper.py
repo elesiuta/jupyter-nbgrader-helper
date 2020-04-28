@@ -48,7 +48,7 @@ import re
 
 ####### Config #######
 
-VERSION = "0.3.2"
+VERSION = "0.3.3"
 
 EMAIL_CONFIG = {
     "CC_ADDRESS": None, # "ccemail@domain.com" or SELF to cc MY_EMAIL_ADDRESS
@@ -105,7 +105,7 @@ nbgrader release "assignment_name"
 jupyter server may need to be restarted at any point during these steps
 
 --If assignments have character encoding issues--
-change the error handlers in this script for opening files with a different one from here
+change the error handlers for opening files in this script with a different one from here
 https://docs.python.org/3/library/codecs.html#error-handlers
 
 --Help with using the nbhelper command line--
@@ -121,7 +121,7 @@ all functions work on the ipynb/html files directly, it never touches the nbgrad
 this allows for more flexibility to repair notebooks nbgrader does not know how to handle and provides robustness in the event of mismatched versions or weird configuration changes by others
 
 --Test Case Templates--
-there are some useful templates in the comments at the bottom of the source code, these links are also useful
+there are some useful templates in the comments at the bottom of nbhelper.py, these links are also useful
 https://nbgrader.readthedocs.io/en/stable/user_guide/autograding_resources.html#tips-for-writing-good-test-cases
 https://filippo.io/instance-monkey-patching-in-python/
 
@@ -585,24 +585,28 @@ def updateCellsMeta(template: dict, student: dict, student_id: str = "") -> typi
             found_student_cell = False
             for i in range(len(student["cells"])):
                 try:
+                    # fix all the metadata
                     if student["cells"][i]["metadata"]["nbgrader"]["grade_id"] == grade_id:
-                        # fix all the metadata
                         found_student_cell = True
+                        # compare student metadata with source (comment out or exclude parts with if key not in[] for more leniency)
                         try:
+                            # cell top level metadata
                             if cell.keys() != student["cells"][i].keys():
                                 raise Exception("Fix metadata")
                             for key in cell:
                                 if key not in ["outputs", "execution_count", "source"]:
                                     if cell[key] != student["cells"][i][key]:
                                         raise Exception("Fix metadata")
-                            if "outputs" not in student["cells"][i] or type(student["cells"][i]["outputs"]) not in [list, str]:
-                                student["cells"][i]["outputs"] = []
-                                modified = True
-                            if "execution_count" not in student["cells"][i] or type(student["cells"][i]["execution_count"]) != int:
-                                student["cells"][i]["execution_count"] = 0
-                                modified = True
+                            # cell["metadata"] metadata
+                            for key in cell["metadata"]:
+                                if cell["metadata"][key] != student["cells"][i]["metadata"][key]:
+                                    raise Exception("Fix metadata")
+                            # cell["metadata"]["nbgrader"] metadata
+                            for key in cell["metadata"]["nbgrader"]:
+                                if cell["metadata"]["nbgrader"][key] != student["cells"][i]["metadata"]["nbgrader"][key]:
+                                    raise Exception("Fix metadata")
                         except:
-                            # create a new cell and preserve source
+                            # create a new cell and preserve source (just run this for every cell if metadata mistakes aren't being caught)
                             try:
                                 new_cell = cell.copy()
                                 new_cell["source"] = student["cells"][i]["source"]
@@ -610,6 +614,13 @@ def updateCellsMeta(template: dict, student: dict, student_id: str = "") -> typi
                                 modified = True
                             except:
                                 print("ERROR: Could not fix metadata for student: %s grade_id: %s" %(student_id, grade_id))
+                        # remaining cell top level metadata
+                        if "outputs" not in student["cells"][i] or type(student["cells"][i]["outputs"]) not in [list, str]:
+                            student["cells"][i]["outputs"] = []
+                            modified = True
+                        if "execution_count" not in student["cells"][i] or type(student["cells"][i]["execution_count"]) not in [int, type(None)]:
+                            student["cells"][i]["execution_count"] = 0
+                            modified = True
                 except:
                     pass
             if not found_student_cell:
@@ -631,19 +642,12 @@ def updateCellsMeta(template: dict, student: dict, student_id: str = "") -> typi
                 modified = True
         except:
             pass
-    # update top level metadata
-    try:
-        if student["metadata"] != template["metadata"]:
-            student["metadata"] = template["metadata"]
-            modified = True
-        if student["nbformat"] != template["nbformat"]:
-            student["nbformat"] = template["nbformat"]
-            modified = True
-        if student["nbformat_minor"] != template["nbformat_minor"]:
-            student["nbformat_minor"] = template["nbformat_minor"]
-            modified = True
-    except:
-        pass
+    # update notebook top level metadata
+    for key in template:
+        if key != "cells":
+            if key not in student or template[key] != student[key]:
+                student[key] = template[key]
+                modified = True
     # return updated notebook (probably still the same object but who cares)
     if modified:
         print("Updated cell metadata for:  " + student_id)
