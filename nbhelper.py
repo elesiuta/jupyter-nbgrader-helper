@@ -48,7 +48,7 @@ import re
 
 ####### Config #######
 
-VERSION = "0.3.0"
+VERSION = "0.3.1"
 
 EMAIL_CONFIG = {
     "CC_ADDRESS": None, # "ccemail@domain.com" or SELF to cc MY_EMAIL_ADDRESS
@@ -74,7 +74,7 @@ this script is designed to be as nondestructive as possible, most functions just
 https://nbgrader.readthedocs.io/en/stable/user_guide/philosophy.html
 https://nbgrader.readthedocs.io/en/stable/user_guide/creating_and_grading_assignments.html
 https://nbgrader.readthedocs.io/en/stable/command_line_tools/index.html
-# summary of steps
+# summary of steps (read the official docs above first!)
 0.a) make sure the nbgrader toolbar and formgrader extensions are enabled (most actions can be performed from here)
 0.b) otherwise, run all commands from the "course_directory"
 1. create the assignment using formgrader
@@ -90,9 +90,9 @@ $ nbgrader autograde "assignment_name" # warning: only run the autograder in res
 $ nbgrader generate_feedback "assignment_name" # do not release, uses non-private outbound exchange folder (all students can read)
 $ nbgrader export # exports grades as a csv file
 
---Making changes assignments after being released (or collected, or autograded!)--
+--Making changes to assignments after being released (or collected, or autograded!)--
 1. if you wish to modify existing test cases, just make the modifications in source and regenerate the notebook
-2. if you wish to modify existing cells in the assignment that students should see, return to step 3, students will need to refetch it
+2. if you wish to modify existing cells in the assignment that students should see, return to step 3 & 4, students will need to refetch it
 3. if you wish to add or delete test/answer cells, or change cell type/metadata, you'll need the workaround in the next section, and have students refetch the assignment or rely on the notebook fixes here
 
 --Workaround for getting errors on assignment source edits made after submissions received--
@@ -105,18 +105,25 @@ nbgrader release "assignment_name"
 jupyter server may need to be restarted at any point during these steps
 
 --If assignments have character encoding issues--
+change the error handlers in this script for opening files with a different one from here
 https://docs.python.org/3/library/codecs.html#error-handlers
 
---File names with spaces--
-argparse does not escape spaces with '\\' in arguments, use \"double quotes\"
+--Help with using the nbhelper command line--
+if you're unfamiliar with command line usage and how to read these docs, this may be helpful http://try.docopt.org/
+hint for file names with spaces: argparse does not escape spaces with '\\' in arguments, use \"double quotes\"
+hint for installation: you can run python nbhelper.py directly, but if you want to install, don't sudo pip install!!! use --user, then run with python -m nbhelper (or add nbhelper to path)
 
 --Dependencies--
-this script does not use any external libraries, however it depends on the JSON metadata format used by jupyter https://nbformat.readthedocs.io/en/latest/format_description.html and nbgrader https://nbgrader.readthedocs.io/en/stable/contributor_guide/metadata.html
+this script does not use any external libraries, however it depends on the JSON metadata format used by jupyter and nbgrader (below)
+https://nbformat.readthedocs.io/en/latest/format_description.html
+https://nbgrader.readthedocs.io/en/stable/contributor_guide/metadata.html
 all functions work on the ipynb/html files directly, it never touches the nbgrader database (gradebook.db) or use the nbgrader api
 this allows for more flexibility to repair notebooks nbgrader does not know how to handle and provides robustness in the event of mismatched versions or weird configuration changes by others
 
 --Test Case Templates--
-there are some useful templates in the comments at the bottom of the source code
+there are some useful templates in the comments at the bottom of the source code, these links are also useful
+https://nbgrader.readthedocs.io/en/stable/user_guide/autograding_resources.html#tips-for-writing-good-test-cases
+https://filippo.io/instance-monkey-patching-in-python/
 
 --Version %s--
 https://github.com/elesiuta/jupyter-nbgrader-helper
@@ -291,7 +298,7 @@ def getAnswerCells(fullPath: str, studentID: str) -> dict:
     output_string_list = []
     for cell in source_json["cells"]:
         try:
-            if cell["metadata"]["nbgrader"]["locked"] == False:
+            if "nbgrader" not in cell["metadata"] or "locked" not in cell["metadata"]["nbgrader"] or cell["metadata"]["nbgrader"]["locked"] == False:
                 output_string_list += cell["source"]
         except:
             pass
@@ -564,14 +571,17 @@ def updateTestCells(template: dict, student: dict, student_id: str = "") -> typi
 
 def updateCellsMeta(template: dict, student: dict, student_id: str = "") -> typing.Union[dict, None]:
     modified = False
-    # update points in test cases
+    valid_grade_ids = []
+    # check cells of student submission against source to match metadata using grade_id
     for cell in template["cells"]:
         try:
             grade_id = cell["metadata"]["nbgrader"]["grade_id"]
+            valid_grade_ids.append(grade_id)
             found_student_cell = False
             for i in range(len(student["cells"])):
                 try:
                     if student["cells"][i]["metadata"]["nbgrader"]["grade_id"] == grade_id:
+                        # update all the metadata
                         found_student_cell = True
                         if student["cells"][i]["cell_type"] != cell["cell_type"]:
                             student["cells"][i]["cell_type"] = cell["cell_type"]
@@ -585,17 +595,57 @@ def updateCellsMeta(template: dict, student: dict, student_id: str = "") -> typi
                         if "execution_count" not in student["cells"][i]:
                             student["cells"][i]["execution_count"] = 0
                             modified = True
+                        # for key in student["cells"][i]:
+                        #     # remove unknown metadata
+                        #     if key not in cell:
+                        #         _ = student["cells"][i].pop(key)
+                        #         modified = True
+                        if cell.keys() != student["cells"][i].keys():
+                            # create a new cell and preserve source
+                            # maybe should just use this all the time
+                            new_cell = cell.copy()
+                            new_cell["source"] = student["cells"][i]["source"]
+                            student["cells"][i] = new_cell
+                            modified = True
                 except:
                     pass
             if not found_student_cell:
-                print("Student: %s is missing test cell: %s" %(student_id, grade_id))
+                print("Student: %s was missing nbgrader cell (added): %s" %(student_id, grade_id))
+                # copy cell to the end without source
+                new_cell = cell.copy()
+                new_cell["source"] = [""]
+                student["cells"].append(new_cell)
+                modified = True
         except:
             pass
+    # check if student notebook contains nbgrader cells it shouldn't
+    for cell in student["cells"]:
+        try:
+            grade_id = cell["metadata"]["nbgrader"]["grade_id"]
+            if grade_id not in valid_grade_ids:
+                print("Student: %s has extra nbgrader cell (removed): %s" %(student_id, grade_id))
+                _ = cell["metadata"].pop("nbgrader")
+                modified = True
+        except:
+            pass
+    # update top level metadata
+    try:
+        if student["metadata"] != template["metadata"]:
+            student["metadata"] = template["metadata"]
+            modified = True
+        if student["nbformat"] != template["nbformat"]:
+            student["nbformat"] = template["nbformat"]
+            modified = True
+        if student["nbformat_minor"] != template["nbformat_minor"]:
+            student["nbformat_minor"] = template["nbformat_minor"]
+            modified = True
+    except:
+        pass
     # return updated notebook (probably still the same object but who cares)
     if modified:
         print("Updated cell metadata for:  " + student_id)
         return student
-        # if this still doesn't work, use rmcells to remove the non-grade_id cells that this doesn't update the metadata for
+        # if this still doesn't work, use rmcells to remove any non-grade_id cells
     else:
         print("No changes made for:     " + student_id)
         return None
